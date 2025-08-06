@@ -28,6 +28,36 @@ app.get('/test', (req, res) => {
   });
 });
 
+// Test endpoint для AI рекомендаций
+app.get('/test/ai', async (req, res) => {
+  try {
+    const { query = 'как успокоить мужа', keywords = 'успокоить,муж,спокойствие' } = req.query;
+    
+    const AIService = require('./src/services/AIService');
+    const aiService = new AIService();
+    
+    const result = await aiService.getBasicRecommendation({
+      keywords: keywords.split(','),
+      chatId: 123456789,
+      userQuery: query
+    });
+    
+    res.json({
+      success: true,
+      query: query,
+      keywords: keywords.split(','),
+      result: result,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Обработка ошибок для health check
 app.use((error, req, res, next) => {
   if (req.path === '/health') {
