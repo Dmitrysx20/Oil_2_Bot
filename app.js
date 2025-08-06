@@ -85,22 +85,7 @@ try {
   // Routes
   // Контроль webhook через переменную окружения
   if (process.env.ENABLE_WEBHOOK === 'true') {
-    app.post('/webhook/telegram', async (req, res) => {
-      try {
-        console.log('📥 Webhook received:', req.body);
-        res.status(200).json({ 
-          status: 'ok',
-          message: 'Webhook работает!',
-          received_data: req.body
-        });
-      } catch (error) {
-        console.error('Webhook error:', error);
-        res.status(200).json({ 
-          status: 'error',
-          message: error.message
-        });
-      }
-    });
+    app.post('/webhook/telegram', telegramController.handleWebhook.bind(telegramController));
   } else {
     app.post('/webhook/telegram', (req, res) => {
       res.status(200).json({ 
