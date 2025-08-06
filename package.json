@@ -25,6 +25,7 @@
     "test:admin-settings:comprehensive": "node scripts/testAdminSettingsComprehensive.js",
     "test:users": "node scripts/testUsers.js",
     "test:oils": "node scripts/testOils.js",
+    "test:oils:varieties": "node scripts/testOilVarieties.js",
     "railway:fix": "node scripts/fixRailwayEnv.js",
     "railway:clean": "node scripts/cleanRailwayEnv.js",
     "railway:debug": "node scripts/debugRailwayEnv.js",
