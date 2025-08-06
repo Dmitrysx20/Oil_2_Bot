@@ -11,8 +11,8 @@ COPY .nvmrc ./
 # Проверяем версию Node.js
 RUN node --version && echo "✅ Node.js version confirmed: $(node --version)"
 
-# Устанавливаем зависимости (упрощенно)
-RUN npm install --production
+# Устанавливаем зависимости (максимально упрощенно)
+RUN npm install
 
 # Копируем исходный код
 COPY . .
