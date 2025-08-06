@@ -13,70 +13,66 @@
 
 1. **Лишние пробелы** в переменных окружения
 2. **Неправильный синтаксис** переменных
-3. **Отсутствующие переменные** окружения
+3. **Пустые значения** переменных с API ключами
 4. **Специальные символы** в значениях
+5. **Конфликт** между файлами конфигурации
 
 ## ✅ Решение
 
-### 1. Автоматическое исправление
+### 🧹 Автоматическая очистка (РЕКОМЕНДУЕТСЯ)
 
-Запустите скрипт для автоматического исправления:
-
-```bash
-npm run railway:fix
-```
-
-### 2. Ручное исправление
-
-#### Шаг 1: Проверьте переменные окружения
+Запустите скрипт для полной очистки и переустановки переменных:
 
 ```bash
-# Проверка текущих переменных
-node scripts/checkEnv.js
-
-# Проверка через Railway CLI
-railway variables
+npm run railway:clean
 ```
 
-#### Шаг 2: Установите правильные переменные
+Этот скрипт:
+- ✅ Удалит все проблемные переменные
+- ✅ Установит только базовые переменные
+- ✅ Предоставит инструкции по настройке API ключей
 
-В Railway Dashboard или через CLI:
+### 🔧 Ручное исправление
+
+#### Шаг 1: Очистка переменных окружения
+
+В Railway Dashboard:
+1. Перейдите в раздел "Variables"
+2. Удалите все переменные с API ключами:
+   - `TELEGRAM_BOT_TOKEN`
+   - `OPENAI_API_KEY`
+   - `PERPLEXITY_API_KEY`
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
+   - `ADMIN_CHAT_IDS`
+
+#### Шаг 2: Установка базовых переменных
+
+Добавьте только эти переменные:
 
 ```bash
-# Основные настройки
-railway variables set NODE_ENV=production
-railway variables set PORT=3000
-
-# Подавление предупреждений
-railway variables set NODE_NO_WARNINGS=1
-railway variables set NODE_OPTIONS="--no-deprecation --no-warnings"
-
-# API ключи (замените на реальные значения)
-railway variables set TELEGRAM_BOT_TOKEN=your_token_here
-railway variables set OPENAI_API_KEY=your_key_here
-railway variables set PERPLEXITY_API_KEY=your_key_here
-
-# База данных
-railway variables set SUPABASE_URL=your_url_here
-railway variables set SUPABASE_ANON_KEY=your_key_here
-
-# Администраторы
-railway variables set ADMIN_CHAT_IDS=123456789,987654321
-
-# Webhook
-railway variables set ENABLE_WEBHOOK=false
-railway variables set WEBHOOK_URL=https://your-domain.com/webhook
+NODE_ENV=production
+PORT=3000
+NODE_NO_WARNINGS=1
+NODE_OPTIONS=--no-deprecation --no-warnings
+ENABLE_WEBHOOK=false
+WEBHOOK_URL=
 ```
 
-#### Шаг 3: Проверьте формат
+#### Шаг 3: Добавление API ключей
 
-Убедитесь, что:
-- ✅ Нет лишних пробелов в начале или конце
-- ✅ Нет специальных символов в значениях
-- ✅ Все обязательные переменные установлены
-- ✅ Значения не содержат недопустимых символов
+После успешной сборки добавьте API ключи по одному:
 
-### 3. Перезапуск деплоя
+```bash
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
+OPENAI_API_KEY=your_openai_api_key_here
+PERPLEXITY_API_KEY=your_perplexity_api_key_here
+SUPABASE_URL=your_supabase_url_here
+SUPABASE_ANON_KEY=your_supabase_anon_key_here
+ADMIN_CHAT_IDS=123456789,987654321
+```
+
+### 🚀 Перезапуск деплоя
 
 ```bash
 # Перезапуск через CLI
@@ -111,28 +107,55 @@ railway logs --follow
 
 ## 🎯 Рекомендации
 
-1. **Всегда используйте кавычки** для значений с пробелами
-2. **Проверяйте переменные** перед деплоем
-3. **Используйте скрипт проверки** `npm run check:env`
-4. **Тестируйте локально** перед отправкой в Railway
-5. **Ведите документацию** переменных окружения
+1. **Сначала очистите** все переменные окружения
+2. **Устанавливайте переменные по одной** для выявления проблемной
+3. **Используйте кавычки** для значений с пробелами
+4. **Проверяйте переменные** перед деплоем
+5. **Используйте скрипт очистки** `npm run railway:clean`
+6. **Тестируйте локально** перед отправкой в Railway
+7. **Ведите документацию** переменных окружения
+
+## 📋 Правильный порядок настройки
+
+### 1. Очистка
+```bash
+npm run railway:clean
+```
+
+### 2. Проверка базовых переменных
+```bash
+npm run check:env
+```
+
+### 3. Добавление API ключей в Railway Dashboard
+- `TELEGRAM_BOT_TOKEN`
+- `OPENAI_API_KEY`
+- `PERPLEXITY_API_KEY`
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `ADMIN_CHAT_IDS`
+
+### 4. Перезапуск деплоя
+```bash
+railway up
+```
 
 ## 📋 Список обязательных переменных
 
-| Переменная | Описание | Пример |
-|------------|----------|---------|
-| `NODE_ENV` | Окружение | `production` |
-| `PORT` | Порт приложения | `3000` |
-| `NODE_NO_WARNINGS` | Подавление предупреждений | `1` |
-| `NODE_OPTIONS` | Опции Node.js | `--no-deprecation --no-warnings` |
-| `TELEGRAM_BOT_TOKEN` | Токен Telegram бота | `1234567890:ABCdefGHIjklMNOpqrsTUVwxyz` |
-| `OPENAI_API_KEY` | Ключ OpenAI API | `sk-...` |
-| `PERPLEXITY_API_KEY` | Ключ Perplexity API | `pplx-...` |
-| `SUPABASE_URL` | URL Supabase | `https://...supabase.co` |
-| `SUPABASE_ANON_KEY` | Ключ Supabase | `eyJ...` |
-| `ADMIN_CHAT_IDS` | ID администраторов | `123456789,987654321` |
-| `ENABLE_WEBHOOK` | Включение webhook | `false` |
-| `WEBHOOK_URL` | URL webhook | `https://...` |
+| Переменная | Описание | Пример | Обязательная |
+|------------|----------|---------|--------------|
+| `NODE_ENV` | Окружение | `production` | ✅ |
+| `PORT` | Порт приложения | `3000` | ✅ |
+| `NODE_NO_WARNINGS` | Подавление предупреждений | `1` | ✅ |
+| `NODE_OPTIONS` | Опции Node.js | `--no-deprecation --no-warnings` | ✅ |
+| `TELEGRAM_BOT_TOKEN` | Токен Telegram бота | `1234567890:ABCdefGHIjklMNOpqrsTUVwxyz` | ✅ |
+| `OPENAI_API_KEY` | Ключ OpenAI API | `sk-...` | ✅ |
+| `PERPLEXITY_API_KEY` | Ключ Perplexity API | `pplx-...` | ✅ |
+| `SUPABASE_URL` | URL Supabase | `https://...supabase.co` | ✅ |
+| `SUPABASE_ANON_KEY` | Ключ Supabase | `eyJ...` | ✅ |
+| `ADMIN_CHAT_IDS` | ID администраторов | `123456789,987654321` | ✅ |
+| `ENABLE_WEBHOOK` | Включение webhook | `false` | ❌ |
+| `WEBHOOK_URL` | URL webhook | `https://...` | ❌ |
 
 ## 🚀 После исправления
 
@@ -147,7 +170,8 @@ railway logs --follow
 
 Если проблема не решается:
 
-1. Проверьте логи Railway
-2. Убедитесь в правильности API ключей
-3. Проверьте доступность внешних сервисов
-4. Обратитесь к документации Railway 
+1. Запустите `npm run railway:clean`
+2. Проверьте логи Railway
+3. Убедитесь в правильности API ключей
+4. Проверьте доступность внешних сервисов
+5. Обратитесь к документации Railway 
