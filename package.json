@@ -7,6 +7,8 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "test": "jest",
+    "test-app": "node src/index-test.js",
+    "test-simple": "node test-app.js",
     "lint": "eslint src/",
     "build": "echo 'No build step required'"
   },
