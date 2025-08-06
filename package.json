@@ -18,6 +18,7 @@
     "test:admin": "node scripts/testAdmin.js",
     "test:admin:comprehensive": "node scripts/testAdminComprehensive.js",
     "test:admin:telegram": "node scripts/testAdminTelegram.js",
+    "test:subscribers": "node scripts/testSubscribers.js",
     "railway:fix": "node scripts/fixRailwayEnv.js",
     "railway:clean": "node scripts/cleanRailwayEnv.js",
     "railway:debug": "node scripts/debugRailwayEnv.js",

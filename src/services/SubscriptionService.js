@@ -1,8 +1,24 @@
+const { createClient } = require('@supabase/supabase-js');
+const config = require('../../config');
 const logger = require('../utils/logger');
 
 class SubscriptionService {
   constructor() {
-    // Заглушка для сервиса подписок
+    this.supabase = null;
+    this.initSupabase();
+  }
+
+  initSupabase() {
+    try {
+      if (config.supabase.url && config.supabase.key) {
+        this.supabase = createClient(config.supabase.url, config.supabase.key);
+        logger.info('✅ SubscriptionService: Supabase client initialized');
+      } else {
+        logger.warn('⚠️ SubscriptionService: Supabase credentials not found, using mock data');
+      }
+    } catch (error) {
+      logger.error('❌ SubscriptionService: Failed to initialize Supabase:', error);
+    }
   }
 
   async handleInquiry(routingResult) {
@@ -324,6 +340,247 @@ class SubscriptionService {
         [{ text: '🏠 Главное меню', callback_data: 'main_menu' }]
       ]
     };
+  }
+
+  // ===== МЕТОДЫ ДЛЯ РАБОТЫ С БАЗОЙ ДАННЫХ =====
+
+  async subscribeUser(telegramId, userName = null) {
+    try {
+      if (!this.supabase) {
+        logger.warn('⚠️ Supabase not available, using mock subscription');
+        return { success: true, mock: true };
+      }
+
+      const { data, error } = await this.supabase
+        .from('subscribers')
+        .upsert({
+          telegram_id: telegramId,
+          username: userName,
+          first_name: userName,
+          subscription_status: 'active',
+          subscribed_at: new Date().toISOString(),
+          last_activity: new Date().toISOString()
+        }, {
+          onConflict: 'telegram_id'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        logger.error('❌ Failed to subscribe user:', error);
+        throw error;
+      }
+
+      // Логируем действие
+      await this.logActivity(telegramId, 'subscribe', { userName });
+
+      logger.info('✅ User subscribed successfully:', { telegramId, userName });
+      return { success: true, data };
+
+    } catch (error) {
+      logger.error('❌ Subscribe user error:', error);
+      throw error;
+    }
+  }
+
+  async unsubscribeUser(telegramId) {
+    try {
+      if (!this.supabase) {
+        logger.warn('⚠️ Supabase not available, using mock unsubscription');
+        return { success: true, mock: true };
+      }
+
+      const { data, error } = await this.supabase
+        .from('subscribers')
+        .update({
+          subscription_status: 'inactive',
+          unsubscribed_at: new Date().toISOString(),
+          last_activity: new Date().toISOString()
+        })
+        .eq('telegram_id', telegramId)
+        .select()
+        .single();
+
+      if (error) {
+        logger.error('❌ Failed to unsubscribe user:', error);
+        throw error;
+      }
+
+      // Логируем действие
+      await this.logActivity(telegramId, 'unsubscribe', {});
+
+      logger.info('✅ User unsubscribed successfully:', { telegramId });
+      return { success: true, data };
+
+    } catch (error) {
+      logger.error('❌ Unsubscribe user error:', error);
+      throw error;
+    }
+  }
+
+  async getActiveSubscribers() {
+    try {
+      if (!this.supabase) {
+        logger.warn('⚠️ Supabase not available, returning mock subscribers');
+        return [
+          { telegram_id: 123456789, first_name: 'Test User 1' },
+          { telegram_id: 987654321, first_name: 'Test User 2' }
+        ];
+      }
+
+      const { data, error } = await this.supabase
+        .from('subscribers')
+        .select('telegram_id, first_name, username, last_activity')
+        .eq('subscription_status', 'active')
+        .order('last_activity', { ascending: false });
+
+      if (error) {
+        logger.error('❌ Failed to get active subscribers:', error);
+        throw error;
+      }
+
+      logger.info(`✅ Retrieved ${data.length} active subscribers`);
+      return data;
+
+    } catch (error) {
+      logger.error('❌ Get active subscribers error:', error);
+      return [];
+    }
+  }
+
+  async getSubscriberCount() {
+    try {
+      if (!this.supabase) {
+        logger.warn('⚠️ Supabase not available, returning mock count');
+        return 2;
+      }
+
+      const { count, error } = await this.supabase
+        .from('subscribers')
+        .select('*', { count: 'exact', head: true });
+
+      if (error) {
+        logger.error('❌ Failed to get subscriber count:', error);
+        throw error;
+      }
+
+      return count || 0;
+
+    } catch (error) {
+      logger.error('❌ Get subscriber count error:', error);
+      return 0;
+    }
+  }
+
+  async getActiveSubscribersCount() {
+    try {
+      if (!this.supabase) {
+        logger.warn('⚠️ Supabase not available, returning mock active count');
+        return 2;
+      }
+
+      const { count, error } = await this.supabase
+        .from('subscribers')
+        .select('*', { count: 'exact', head: true })
+        .eq('subscription_status', 'active');
+
+      if (error) {
+        logger.error('❌ Failed to get active subscribers count:', error);
+        throw error;
+      }
+
+      return count || 0;
+
+    } catch (error) {
+      logger.error('❌ Get active subscribers count error:', error);
+      return 0;
+    }
+  }
+
+  async updateLastActivity(telegramId) {
+    try {
+      if (!this.supabase) {
+        return { success: true, mock: true };
+      }
+
+      const { error } = await this.supabase
+        .from('subscribers')
+        .update({ last_activity: new Date().toISOString() })
+        .eq('telegram_id', telegramId);
+
+      if (error) {
+        logger.error('❌ Failed to update last activity:', error);
+      }
+
+    } catch (error) {
+      logger.error('❌ Update last activity error:', error);
+    }
+  }
+
+  async logActivity(telegramId, action, details = {}) {
+    try {
+      if (!this.supabase) {
+        return { success: true, mock: true };
+      }
+
+      const { error } = await this.supabase
+        .from('subscriber_activity_log')
+        .insert({
+          telegram_id: telegramId,
+          action: action,
+          details: details
+        });
+
+      if (error) {
+        logger.error('❌ Failed to log activity:', error);
+      }
+
+    } catch (error) {
+      logger.error('❌ Log activity error:', error);
+    }
+  }
+
+  async getSubscriberStats() {
+    try {
+      if (!this.supabase) {
+        logger.warn('⚠️ Supabase not available, returning mock stats');
+        return {
+          total_subscribers: 2,
+          active_subscribers: 2,
+          inactive_subscribers: 0,
+          blocked_subscribers: 0,
+          active_last_7_days: 2,
+          active_last_30_days: 2,
+          new_last_7_days: 0,
+          new_last_30_days: 0
+        };
+      }
+
+      const { data, error } = await this.supabase
+        .from('subscribers_stats')
+        .select('*')
+        .single();
+
+      if (error) {
+        logger.error('❌ Failed to get subscriber stats:', error);
+        throw error;
+      }
+
+      return data;
+
+    } catch (error) {
+      logger.error('❌ Get subscriber stats error:', error);
+      return {
+        total_subscribers: 0,
+        active_subscribers: 0,
+        inactive_subscribers: 0,
+        blocked_subscribers: 0,
+        active_last_7_days: 0,
+        active_last_30_days: 0,
+        new_last_7_days: 0,
+        new_last_30_days: 0
+      };
+    }
   }
 }
 
