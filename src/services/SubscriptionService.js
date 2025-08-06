@@ -354,14 +354,36 @@ class SubscriptionService {
       const { data, error } = await this.supabase
         .from('subscribers')
         .upsert({
-          telegram_id: telegramId,
+          chat_id: telegramId,
           username: userName,
           first_name: userName,
-          subscription_status: 'active',
-          subscribed_at: new Date().toISOString(),
-          last_activity: new Date().toISOString()
+          is_active: true,
+          subscription_date: new Date().toISOString(),
+          last_activity: new Date().toISOString(),
+          preferences: {
+            language: 'ru',
+            evening_time: '20:00',
+            morning_time: '09:00',
+            weekend_mode: false,
+            music_platforms: ['youtube'],
+            notification_enabled: true
+          },
+          stats: {
+            favorite_oils: [],
+            feedback_given: 0,
+            most_active_hour: 12,
+            avg_response_time: 0,
+            total_interactions: 0,
+            recommendations_received: 0
+          },
+          current_state: {
+            last_mood: null,
+            last_goals: [],
+            streak_days: 0,
+            current_program: null
+          }
         }, {
-          onConflict: 'telegram_id'
+          onConflict: 'chat_id'
         })
         .select()
         .single();
@@ -393,11 +415,10 @@ class SubscriptionService {
       const { data, error } = await this.supabase
         .from('subscribers')
         .update({
-          subscription_status: 'inactive',
-          unsubscribed_at: new Date().toISOString(),
+          is_active: false,
           last_activity: new Date().toISOString()
         })
-        .eq('telegram_id', telegramId)
+        .eq('chat_id', telegramId)
         .select()
         .single();
 
@@ -423,15 +444,15 @@ class SubscriptionService {
       if (!this.supabase) {
         logger.warn('⚠️ Supabase not available, returning mock subscribers');
         return [
-          { telegram_id: 123456789, first_name: 'Test User 1' },
-          { telegram_id: 987654321, first_name: 'Test User 2' }
+          { chat_id: 123456789, first_name: 'Test User 1' },
+          { chat_id: 987654321, first_name: 'Test User 2' }
         ];
       }
 
       const { data, error } = await this.supabase
         .from('subscribers')
-        .select('telegram_id, first_name, username, last_activity')
-        .eq('subscription_status', 'active')
+        .select('chat_id, first_name, username, last_activity, preferences, stats')
+        .eq('is_active', true)
         .order('last_activity', { ascending: false });
 
       if (error) {
@@ -482,7 +503,7 @@ class SubscriptionService {
       const { count, error } = await this.supabase
         .from('subscribers')
         .select('*', { count: 'exact', head: true })
-        .eq('subscription_status', 'active');
+        .eq('is_active', true);
 
       if (error) {
         logger.error('❌ Failed to get active subscribers count:', error);
@@ -506,7 +527,7 @@ class SubscriptionService {
       const { error } = await this.supabase
         .from('subscribers')
         .update({ last_activity: new Date().toISOString() })
-        .eq('telegram_id', telegramId);
+        .eq('chat_id', telegramId);
 
       if (error) {
         logger.error('❌ Failed to update last activity:', error);
@@ -526,7 +547,7 @@ class SubscriptionService {
       const { error } = await this.supabase
         .from('subscriber_activity_log')
         .insert({
-          telegram_id: telegramId,
+          chat_id: telegramId,
           action: action,
           details: details
         });
@@ -548,11 +569,13 @@ class SubscriptionService {
           total_subscribers: 2,
           active_subscribers: 2,
           inactive_subscribers: 0,
-          blocked_subscribers: 0,
           active_last_7_days: 2,
           active_last_30_days: 2,
           new_last_7_days: 0,
-          new_last_30_days: 0
+          new_last_30_days: 0,
+          engaged_users: 1,
+          avg_interactions_per_user: 5,
+          loyal_users: 1
         };
       }
 
@@ -574,12 +597,253 @@ class SubscriptionService {
         total_subscribers: 0,
         active_subscribers: 0,
         inactive_subscribers: 0,
-        blocked_subscribers: 0,
         active_last_7_days: 0,
         active_last_30_days: 0,
         new_last_7_days: 0,
-        new_last_30_days: 0
+        new_last_30_days: 0,
+        engaged_users: 0,
+        avg_interactions_per_user: 0,
+        loyal_users: 0
       };
+    }
+  }
+
+  // ===== НОВЫЕ МЕТОДЫ ДЛЯ РАСШИРЕННОЙ ФУНКЦИОНАЛЬНОСТИ =====
+
+  async updateUserPreferences(telegramId, preferences) {
+    try {
+      if (!this.supabase) {
+        logger.warn('⚠️ Supabase not available, using mock update');
+        return { success: true, mock: true };
+      }
+
+      const { data, error } = await this.supabase
+        .from('subscribers')
+        .update({ 
+          preferences: preferences,
+          last_activity: new Date().toISOString()
+        })
+        .eq('chat_id', telegramId)
+        .select()
+        .single();
+
+      if (error) {
+        logger.error('❌ Failed to update user preferences:', error);
+        throw error;
+      }
+
+      await this.logActivity(telegramId, 'update_preferences', { preferences });
+      logger.info('✅ User preferences updated successfully:', { telegramId });
+      return { success: true, data };
+
+    } catch (error) {
+      logger.error('❌ Update user preferences error:', error);
+      throw error;
+    }
+  }
+
+  async updateUserStats(telegramId, stats) {
+    try {
+      if (!this.supabase) {
+        logger.warn('⚠️ Supabase not available, using mock update');
+        return { success: true, mock: true };
+      }
+
+      const { data, error } = await this.supabase
+        .from('subscribers')
+        .update({ 
+          stats: stats,
+          last_activity: new Date().toISOString()
+        })
+        .eq('chat_id', telegramId)
+        .select()
+        .single();
+
+      if (error) {
+        logger.error('❌ Failed to update user stats:', error);
+        throw error;
+      }
+
+      await this.logActivity(telegramId, 'update_stats', { stats });
+      logger.info('✅ User stats updated successfully:', { telegramId });
+      return { success: true, data };
+
+    } catch (error) {
+      logger.error('❌ Update user stats error:', error);
+      throw error;
+    }
+  }
+
+  async updateUserState(telegramId, state) {
+    try {
+      if (!this.supabase) {
+        logger.warn('⚠️ Supabase not available, using mock update');
+        return { success: true, mock: true };
+      }
+
+      const { data, error } = await this.supabase
+        .from('subscribers')
+        .update({ 
+          current_state: state,
+          last_activity: new Date().toISOString()
+        })
+        .eq('chat_id', telegramId)
+        .select()
+        .single();
+
+      if (error) {
+        logger.error('❌ Failed to update user state:', error);
+        throw error;
+      }
+
+      await this.logActivity(telegramId, 'update_state', { state });
+      logger.info('✅ User state updated successfully:', { telegramId });
+      return { success: true, data };
+
+    } catch (error) {
+      logger.error('❌ Update user state error:', error);
+      throw error;
+    }
+  }
+
+  async getUserProfile(telegramId) {
+    try {
+      if (!this.supabase) {
+        logger.warn('⚠️ Supabase not available, returning mock profile');
+        return {
+          chat_id: telegramId,
+          first_name: 'Test User',
+          is_active: true,
+          preferences: {
+            language: 'ru',
+            evening_time: '20:00',
+            morning_time: '09:00'
+          },
+          stats: {
+            total_interactions: 5,
+            recommendations_received: 3
+          },
+          current_state: {
+            streak_days: 2,
+            last_mood: 'energetic'
+          }
+        };
+      }
+
+      const { data, error } = await this.supabase
+        .from('subscribers')
+        .select('*')
+        .eq('chat_id', telegramId)
+        .single();
+
+      if (error) {
+        logger.error('❌ Failed to get user profile:', error);
+        throw error;
+      }
+
+      return data;
+
+    } catch (error) {
+      logger.error('❌ Get user profile error:', error);
+      return null;
+    }
+  }
+
+  async incrementInteraction(telegramId, interactionType = 'general') {
+    try {
+      if (!this.supabase) {
+        return { success: true, mock: true };
+      }
+
+      // Получаем текущие статистики
+      const { data: currentData } = await this.supabase
+        .from('subscribers')
+        .select('stats')
+        .eq('chat_id', telegramId)
+        .single();
+
+      if (!currentData) {
+        logger.warn('⚠️ User not found for interaction increment:', telegramId);
+        return { success: false };
+      }
+
+      const currentStats = currentData.stats || {};
+      const updatedStats = {
+        ...currentStats,
+        total_interactions: (currentStats.total_interactions || 0) + 1
+      };
+
+      // Обновляем статистики
+      const { error } = await this.supabase
+        .from('subscribers')
+        .update({ 
+          stats: updatedStats,
+          last_activity: new Date().toISOString()
+        })
+        .eq('chat_id', telegramId);
+
+      if (error) {
+        logger.error('❌ Failed to increment interaction:', error);
+      } else {
+        await this.logActivity(telegramId, 'interaction', { 
+          type: interactionType,
+          total_interactions: updatedStats.total_interactions
+        });
+      }
+
+    } catch (error) {
+      logger.error('❌ Increment interaction error:', error);
+    }
+  }
+
+  async addFavoriteOil(telegramId, oilName) {
+    try {
+      if (!this.supabase) {
+        return { success: true, mock: true };
+      }
+
+      // Получаем текущие статистики
+      const { data: currentData } = await this.supabase
+        .from('subscribers')
+        .select('stats')
+        .eq('chat_id', telegramId)
+        .single();
+
+      if (!currentData) {
+        logger.warn('⚠️ User not found for favorite oil:', telegramId);
+        return { success: false };
+      }
+
+      const currentStats = currentData.stats || {};
+      const favoriteOils = currentStats.favorite_oils || [];
+      
+      if (!favoriteOils.includes(oilName)) {
+        favoriteOils.push(oilName);
+      }
+
+      const updatedStats = {
+        ...currentStats,
+        favorite_oils: favoriteOils
+      };
+
+      // Обновляем статистики
+      const { error } = await this.supabase
+        .from('subscribers')
+        .update({ 
+          stats: updatedStats,
+          last_activity: new Date().toISOString()
+        })
+        .eq('chat_id', telegramId);
+
+      if (error) {
+        logger.error('❌ Failed to add favorite oil:', error);
+      } else {
+        await this.logActivity(telegramId, 'add_favorite_oil', { oilName });
+        logger.info('✅ Favorite oil added successfully:', { telegramId, oilName });
+      }
+
+    } catch (error) {
+      logger.error('❌ Add favorite oil error:', error);
     }
   }
 }

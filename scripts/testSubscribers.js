@@ -59,9 +59,12 @@ async function testSubscribersDatabase() {
     console.log(`✅ Получено ${activeSubscribers.length} активных подписчиков:`);
     
     activeSubscribers.forEach((subscriber, index) => {
-      console.log(`   ${index + 1}. ${subscriber.first_name || subscriber.username} (ID: ${subscriber.telegram_id})`);
+      console.log(`   ${index + 1}. ${subscriber.first_name || subscriber.username} (ID: ${subscriber.chat_id})`);
       if (subscriber.last_activity) {
         console.log(`      Последняя активность: ${new Date(subscriber.last_activity).toLocaleString('ru-RU')}`);
+      }
+      if (subscriber.stats && subscriber.stats.total_interactions) {
+        console.log(`      Взаимодействий: ${subscriber.stats.total_interactions}`);
       }
     });
   } catch (error) {
@@ -181,6 +184,72 @@ async function testSubscribersDatabase() {
     console.log('❌ Ошибка при получении финальной статистики:', error.message);
   }
 
+  // Тест 9: Новые функции расширенной функциональности
+  console.log('\n📋 Тест 9: Расширенная функциональность');
+  console.log('─'.repeat(50));
+  
+  // Тест получения профиля пользователя
+  console.log('\n🔧 Тест получения профиля пользователя:');
+  try {
+    const userProfile = await subscriptionService.getUserProfile(testUserId);
+    if (userProfile) {
+      console.log('✅ Профиль пользователя получен');
+      console.log(`   Имя: ${userProfile.first_name}`);
+      console.log(`   Активен: ${userProfile.is_active ? 'Да' : 'Нет'}`);
+      if (userProfile.preferences) {
+        console.log(`   Язык: ${userProfile.preferences.language}`);
+        console.log(`   Время уведомлений: ${userProfile.preferences.morning_time} - ${userProfile.preferences.evening_time}`);
+      }
+    } else {
+      console.log('❌ Профиль пользователя не найден');
+    }
+  } catch (error) {
+    console.log('❌ Ошибка при получении профиля:', error.message);
+  }
+
+  // Тест обновления настроек
+  console.log('\n🔧 Тест обновления настроек:');
+  try {
+    const newPreferences = {
+      language: 'ru',
+      evening_time: '21:00',
+      morning_time: '08:00',
+      weekend_mode: true,
+      music_platforms: ['youtube', 'spotify'],
+      notification_enabled: true
+    };
+    
+    const updateResult = await subscriptionService.updateUserPreferences(testUserId, newPreferences);
+    if (updateResult.success) {
+      console.log('✅ Настройки пользователя обновлены');
+      if (updateResult.mock) {
+        console.log('⚠️ Использованы mock данные');
+      }
+    } else {
+      console.log('❌ Ошибка при обновлении настроек');
+    }
+  } catch (error) {
+    console.log('❌ Ошибка при обновлении настроек:', error.message);
+  }
+
+  // Тест добавления любимого масла
+  console.log('\n🔧 Тест добавления любимого масла:');
+  try {
+    await subscriptionService.addFavoriteOil(testUserId, 'Лаванда');
+    console.log('✅ Любимое масло добавлено');
+  } catch (error) {
+    console.log('❌ Ошибка при добавлении любимого масла:', error.message);
+  }
+
+  // Тест инкремента взаимодействий
+  console.log('\n🔧 Тест инкремента взаимодействий:');
+  try {
+    await subscriptionService.incrementInteraction(testUserId, 'oil_search');
+    console.log('✅ Взаимодействие засчитано');
+  } catch (error) {
+    console.log('❌ Ошибка при инкременте взаимодействий:', error.message);
+  }
+
   console.log('\n✅ Тестирование системы учета подписчиков завершено!');
   
   console.log('\n💡 Рекомендации:');
@@ -188,6 +257,7 @@ async function testSubscribersDatabase() {
   console.log('   2. Проверьте права доступа к таблицам');
   console.log('   3. Настройте RLS политики если необходимо');
   console.log('   4. Проверьте логи в Supabase Dashboard');
+  console.log('   5. Новая схема поддерживает расширенную функциональность');
 }
 
 // Запуск теста

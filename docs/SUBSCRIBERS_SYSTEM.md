@@ -16,34 +16,35 @@
 Основная таблица для хранения информации о подписчиках:
 
 ```sql
-CREATE TABLE subscribers (
-    id BIGSERIAL PRIMARY KEY,
-    telegram_id BIGINT UNIQUE NOT NULL,
-    username VARCHAR(255),
-    first_name VARCHAR(255),
-    last_name VARCHAR(255),
-    subscription_status VARCHAR(50) DEFAULT 'active' CHECK (subscription_status IN ('active', 'inactive', 'blocked')),
-    subscribed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    unsubscribed_at TIMESTAMP WITH TIME ZONE,
-    last_activity TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    timezone VARCHAR(50) DEFAULT 'Europe/Moscow',
-    morning_notifications BOOLEAN DEFAULT true,
-    evening_notifications BOOLEAN DEFAULT true,
-    morning_time TIME DEFAULT '09:00',
-    evening_time TIME DEFAULT '20:00',
-    preferences JSONB DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+CREATE TABLE public.subscribers (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  chat_id bigint NOT NULL,
+  username text NULL,
+  first_name text NULL,
+  last_name text NULL,
+  language_code text NULL DEFAULT 'ru'::text,
+  is_active boolean NULL DEFAULT true,
+  subscription_date timestamp without time zone NULL DEFAULT now(),
+  last_activity timestamp without time zone NULL DEFAULT now(),
+  timezone text NULL DEFAULT 'Europe/Moscow'::text,
+  preferences jsonb NULL DEFAULT '{"language": "ru", "evening_time": "20:00", "morning_time": "09:00", "weekend_mode": false, "music_platforms": ["youtube"], "notification_enabled": true}'::jsonb,
+  stats jsonb NULL DEFAULT '{"favorite_oils": [], "feedback_given": 0, "most_active_hour": 12, "avg_response_time": 0, "total_interactions": 0, "recommendations_received": 0}'::jsonb,
+  current_state jsonb NULL DEFAULT '{"last_mood": null, "last_goals": [], "streak_days": 0, "current_program": null}'::jsonb,
+  created_at timestamp without time zone NULL DEFAULT now(),
+  updated_at timestamp without time zone NULL DEFAULT now(),
+  CONSTRAINT subscribers_pkey PRIMARY KEY (id),
+  CONSTRAINT subscribers_chat_id_key UNIQUE (chat_id)
 );
 ```
 
 **Поля:**
-- `telegram_id` - уникальный ID пользователя в Telegram
-- `subscription_status` - статус подписки (active/inactive/blocked)
+- `chat_id` - уникальный ID пользователя в Telegram
+- `is_active` - статус активности пользователя
+- `language_code` - код языка пользователя
 - `timezone` - часовой пояс пользователя
-- `morning_notifications` / `evening_notifications` - настройки уведомлений
-- `morning_time` / `evening_time` - время отправки уведомлений
-- `preferences` - дополнительные настройки в формате JSON
+- `preferences` - настройки пользователя (язык, время уведомлений, платформы)
+- `stats` - статистика пользователя (любимые масла, активность, отзывы)
+- `current_state` - текущее состояние пользователя (настроение, цели, программы)
 
 ### Таблица `subscriber_activity_log`
 
@@ -71,16 +72,18 @@ CREATE TABLE subscriber_activity_log (
 Агрегированная статистика подписчиков:
 
 ```sql
-CREATE VIEW subscribers_stats AS
+CREATE OR REPLACE VIEW subscribers_stats AS
 SELECT 
     COUNT(*) as total_subscribers,
-    COUNT(*) FILTER (WHERE subscription_status = 'active') as active_subscribers,
-    COUNT(*) FILTER (WHERE subscription_status = 'inactive') as inactive_subscribers,
-    COUNT(*) FILTER (WHERE subscription_status = 'blocked') as blocked_subscribers,
+    COUNT(*) FILTER (WHERE is_active = true) as active_subscribers,
+    COUNT(*) FILTER (WHERE is_active = false) as inactive_subscribers,
     COUNT(*) FILTER (WHERE last_activity > NOW() - INTERVAL '7 days') as active_last_7_days,
     COUNT(*) FILTER (WHERE last_activity > NOW() - INTERVAL '30 days') as active_last_30_days,
-    COUNT(*) FILTER (WHERE subscribed_at > NOW() - INTERVAL '7 days') as new_last_7_days,
-    COUNT(*) FILTER (WHERE subscribed_at > NOW() - INTERVAL '30 days') as new_last_30_days
+    COUNT(*) FILTER (WHERE subscription_date > NOW() - INTERVAL '7 days') as new_last_7_days,
+    COUNT(*) FILTER (WHERE subscription_date > NOW() - INTERVAL '30 days') as new_last_30_days,
+    COUNT(*) FILTER (WHERE (stats->>'total_interactions')::int > 0) as engaged_users,
+    AVG((stats->>'total_interactions')::int) as avg_interactions_per_user,
+    COUNT(*) FILTER (WHERE (current_state->>'streak_days')::int > 7) as loyal_users
 FROM subscribers;
 ```
 
@@ -167,6 +170,69 @@ await subscriptionService.logActivity(123456789, 'interaction', {
 });
 ```
 
+#### `updateUserPreferences(telegramId, preferences)`
+Обновляет настройки пользователя:
+
+```javascript
+const preferences = {
+  language: 'ru',
+  evening_time: '21:00',
+  morning_time: '08:00',
+  weekend_mode: true,
+  music_platforms: ['youtube', 'spotify'],
+  notification_enabled: true
+};
+await subscriptionService.updateUserPreferences(telegramId, preferences);
+```
+
+#### `updateUserStats(telegramId, stats)`
+Обновляет статистику пользователя:
+
+```javascript
+const stats = {
+  favorite_oils: ['лаванда', 'мята'],
+  feedback_given: 5,
+  total_interactions: 25,
+  recommendations_received: 10
+};
+await subscriptionService.updateUserStats(telegramId, stats);
+```
+
+#### `updateUserState(telegramId, state)`
+Обновляет текущее состояние пользователя:
+
+```javascript
+const state = {
+  last_mood: 'energetic',
+  last_goals: ['концентрация', 'энергия'],
+  streak_days: 5,
+  current_program: 'morning_boost'
+};
+await subscriptionService.updateUserState(telegramId, state);
+```
+
+#### `getUserProfile(telegramId)`
+Получает полный профиль пользователя:
+
+```javascript
+const profile = await subscriptionService.getUserProfile(telegramId);
+// Возвращает: { chat_id, first_name, is_active, preferences, stats, current_state }
+```
+
+#### `incrementInteraction(telegramId, interactionType)`
+Увеличивает счетчик взаимодействий:
+
+```javascript
+await subscriptionService.incrementInteraction(telegramId, 'oil_search');
+```
+
+#### `addFavoriteOil(telegramId, oilName)`
+Добавляет масло в список любимых:
+
+```javascript
+await subscriptionService.addFavoriteOil(telegramId, 'Лаванда');
+```
+
 ## 📈 Мониторинг и аналитика
 
 ### Ключевые метрики
@@ -180,9 +246,9 @@ await subscriptionService.logActivity(123456789, 'interaction', {
 
 ```sql
 -- Топ активных пользователей
-SELECT telegram_id, first_name, last_activity 
+SELECT chat_id, first_name, last_activity 
 FROM subscribers 
-WHERE subscription_status = 'active' 
+WHERE is_active = true 
 ORDER BY last_activity DESC 
 LIMIT 10;
 
