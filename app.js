@@ -85,7 +85,56 @@ try {
   // Routes
   // Контроль webhook через переменную окружения
   if (process.env.ENABLE_WEBHOOK === 'true') {
-    app.post('/webhook/telegram', telegramController.handleWebhook.bind(telegramController));
+    app.post('/webhook/telegram', async (req, res) => {
+      try {
+        console.log('📥 Webhook received:', JSON.stringify(req.body, null, 2));
+        
+        // Простая обработка команды /start
+        if (req.body?.message?.text === '/start') {
+          const chatId = req.body.message.chat.id;
+          const userName = req.body.message.from.first_name;
+          
+          const welcomeMessage = `👋 Привет, ${userName || 'друг'}! 
+
+Я ваш персональный помощник по ароматерапии. Я помогу вам найти идеальное эфирное масло для любых целей.
+
+🔍 **Что я умею:**
+• Искать информацию о конкретных маслах
+• Рекомендовать масла по симптомам и настроению
+• Предлагать музыкальные плейлисты
+• Настраивать уведомления о новых маслах
+
+💡 **Попробуйте спросить:**
+• "Лаванда" - информация о масле
+• "Нужна энергия" - масла для бодрости
+• "Хочу расслабиться" - масла для релакса
+• "Музыка для сна" - плейлист для сна
+
+Начните с любого вопроса! 🌿`;
+
+          res.status(200).json({ 
+            status: 'ok',
+            message: 'Команда /start обработана',
+            response: {
+              chatId: chatId,
+              message: welcomeMessage
+            }
+          });
+        } else {
+          res.status(200).json({ 
+            status: 'ok',
+            message: 'Webhook работает! Ожидается полная функциональность',
+            received_data: req.body
+          });
+        }
+      } catch (error) {
+        console.error('Webhook error:', error);
+        res.status(200).json({ 
+          status: 'error',
+          message: error.message
+        });
+      }
+    });
   } else {
     app.post('/webhook/telegram', (req, res) => {
       res.status(200).json({ 
