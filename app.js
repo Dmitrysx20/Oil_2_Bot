@@ -71,7 +71,17 @@ try {
   app.use(adminAuth);
 
   // Routes
-  app.post('/webhook/telegram', telegramController.handleWebhook.bind(telegramController));
+  // Контроль webhook через переменную окружения
+  if (process.env.ENABLE_WEBHOOK === 'true') {
+    app.post('/webhook/telegram', telegramController.handleWebhook.bind(telegramController));
+  } else {
+    app.post('/webhook/telegram', (req, res) => {
+      res.status(200).json({ 
+        status: 'webhook_disabled',
+        message: 'Webhook отключен. Установите ENABLE_WEBHOOK=true для активации'
+      });
+    });
+  }
 
   // Запуск cron jobs (только в продакшене)
   if (process.env.NODE_ENV === 'production') {
