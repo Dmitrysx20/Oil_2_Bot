@@ -112,12 +112,102 @@ try {
 
 Начните с любого вопроса! 🌿`;
 
+          // Отправляем сообщение через Telegram API
+          try {
+            const botToken = process.env.TELEGRAM_BOT_TOKEN;
+            if (botToken) {
+              await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                chat_id: chatId,
+                text: welcomeMessage,
+                parse_mode: 'Markdown'
+              });
+            }
+          } catch (error) {
+            console.error('Error sending message:', error.message);
+          }
+
           res.status(200).json({ 
             status: 'ok',
-            message: 'Команда /start обработана',
+            message: 'Команда /start обработана и сообщение отправлено',
             response: {
               chatId: chatId,
               message: welcomeMessage
+            }
+          });
+        } else if (req.body?.message?.text) {
+          // Обработка других сообщений
+          const chatId = req.body.message.chat.id;
+          const text = req.body.message.text;
+          
+          let responseMessage = '';
+          
+          if (text.toLowerCase().includes('лаванда')) {
+            responseMessage = `🌿 **Лаванда** - одно из самых популярных эфирных масел!
+
+**Свойства:**
+• Успокаивающее и расслабляющее
+• Помогает при бессоннице
+• Снимает стресс и тревогу
+• Обладает антисептическими свойствами
+
+**Применение:**
+• Ароматерапия: 2-3 капли в аромалампу
+• Ванна: 5-10 капель с морской солью
+• Массаж: 2-3 капли с базовым маслом
+
+💡 **Совет:** Лаванда отлично сочетается с ромашкой для усиления успокаивающего эффекта.`;
+          } else if (text.toLowerCase().includes('энергия') || text.toLowerCase().includes('бодрость')) {
+            responseMessage = `⚡ **Масла для энергии и бодрости:**
+
+**1. Апельсин** - освежающий и бодрящий
+**2. Лимон** - повышает концентрацию
+**3. Мята перечная** - стимулирует умственную активность
+**4. Розмарин** - улучшает память и внимание
+**5. Грейпфрут** - поднимает настроение
+
+💡 **Совет:** Смешайте 2 капли лимона + 2 капли мяты для утреннего заряда энергии!`;
+          } else if (text.toLowerCase().includes('расслаб') || text.toLowerCase().includes('спокойствие')) {
+            responseMessage = `😌 **Масла для расслабления:**
+
+**1. Лаванда** - классическое успокаивающее масло
+**2. Ромашка** - мягкое расслабляющее действие
+**3. Иланг-иланг** - снимает напряжение
+**4. Ветивер** - глубокое расслабление
+**5. Бергамот** - снимает стресс
+
+💡 **Совет:** Создайте смесь для вечернего релакса: лаванда + ромашка + иланг-иланг`;
+          } else {
+            responseMessage = `🤔 Я не совсем понял ваш запрос: "${text}"
+
+💡 **Попробуйте спросить:**
+• "Лаванда" - информация о масле
+• "Нужна энергия" - масла для бодрости
+• "Хочу расслабиться" - масла для релакса
+• "Музыка для сна" - плейлист для сна
+
+Или используйте команду /start для справки.`;
+          }
+
+          // Отправляем ответ через Telegram API
+          try {
+            const botToken = process.env.TELEGRAM_BOT_TOKEN;
+            if (botToken) {
+              await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                chat_id: chatId,
+                text: responseMessage,
+                parse_mode: 'Markdown'
+              });
+            }
+          } catch (error) {
+            console.error('Error sending message:', error.message);
+          }
+
+          res.status(200).json({ 
+            status: 'ok',
+            message: 'Сообщение обработано и ответ отправлен',
+            response: {
+              chatId: chatId,
+              message: responseMessage
             }
           });
         } else {
