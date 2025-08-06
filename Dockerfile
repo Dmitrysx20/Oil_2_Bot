@@ -1,31 +1,40 @@
-FROM node:18-alpine
+# Используем официальный образ Node.js 22
+FROM node:22.17.1-alpine
 
-# Установка рабочей директории
+# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Копирование файлов зависимостей
+# Копируем файлы зависимостей
 COPY package*.json ./
+COPY .nvmrc ./
 
-# Установка зависимостей
+# Проверяем версию Node.js
+RUN node --version && echo "✅ Node.js version confirmed: $(node --version)"
+
+# Устанавливаем зависимости
 RUN npm ci --only=production
 
-# Копирование исходного кода
+# Копируем исходный код
 COPY . .
 
-# Создание пользователя для безопасности
+# Создаем пользователя для безопасности
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nodejs -u 1001
 
-# Изменение владельца файлов
+# Меняем владельца файлов
 RUN chown -R nodejs:nodejs /app
 USER nodejs
 
-# Открытие порта
+# Открываем порт
 EXPOSE 3000
 
-# Проверка здоровья
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node healthcheck.js
+# Проверяем версию Node.js еще раз
+RUN node --version && echo "✅ Final Node.js version check: $(node --version)"
 
-# Запуск приложения
+# Устанавливаем переменные окружения
+ENV NODE_VERSION=22.17.1
+ENV NODE_ENV=production
+ENV RAILWAY_ENVIRONMENT=production
+
+# Запускаем приложение
 CMD ["npm", "start"] 
