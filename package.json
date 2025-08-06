@@ -24,6 +24,7 @@
     "test:admin-settings:migrations": "node scripts/testAdminSettingsMigrations.js",
     "test:admin-settings:comprehensive": "node scripts/testAdminSettingsComprehensive.js",
     "test:users": "node scripts/testUsers.js",
+    "test:oils": "node scripts/testOils.js",
     "railway:fix": "node scripts/fixRailwayEnv.js",
     "railway:clean": "node scripts/cleanRailwayEnv.js",
     "railway:debug": "node scripts/debugRailwayEnv.js",
