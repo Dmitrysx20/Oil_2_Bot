@@ -1,7 +1,7 @@
 {
   "name": "essential-oils-bot",
   "version": "1.0.0",
-  "description": "Telegram bot for essential oils recommendations with n8n",
+  "description": "Telegram bot for essential oils recommendations",
   "main": "start.js",
   "scripts": {
     "start": "node start.js",
@@ -10,8 +10,7 @@
     "test": "node test_supabase_diagnosis.js",
     "railway-test": "node railway_test.js",
     "health-check": "node health_check.js",
-    "postinstall": "node check_api_keys.js",
-    "n8n": "npx n8n"
+    "postinstall": "echo 'Postinstall completed'"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
@@ -25,7 +24,6 @@
     "telegram",
     "bot",
     "essential-oils",
-    "n8n",
     "railway",
     "supabase"
   ],
