@@ -27,8 +27,7 @@ try {
 // Список переменных для удаления (если есть проблемы)
 const variablesToRemove = [
   'TELEGRAM_BOT_TOKEN',
-  'OPENAI_API_KEY', 
-  'PERPLEXITY_API_KEY',
+  'OPENAI_API_KEY',
   'SUPABASE_URL',
   'SUPABASE_ANON_KEY',
   'ADMIN_CHAT_IDS'
@@ -76,7 +75,6 @@ console.log('4. Добавьте следующие переменные:');
 console.log('');
 console.log('   TELEGRAM_BOT_TOKEN=your_telegram_bot_token');
 console.log('   OPENAI_API_KEY=your_openai_api_key');
-console.log('   PERPLEXITY_API_KEY=your_perplexity_api_key');
 console.log('   SUPABASE_URL=your_supabase_url');
 console.log('   SUPABASE_ANON_KEY=your_supabase_anon_key');
 console.log('   ADMIN_CHAT_IDS=123456789,987654321');

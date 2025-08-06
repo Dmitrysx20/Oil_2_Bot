@@ -13,10 +13,6 @@ module.exports = {
     model: 'gpt-4o-mini',
     maxTokens: 2000
   },
-  perplexity: {
-    apiKey: process.env.PERPLEXITY_API_KEY || null,
-    model: 'llama-3.1-sonar-small-128k-online'
-  },
   admin: {
     chatIds: process.env.ADMIN_CHAT_IDS?.split(',').map(id => parseInt(id.trim())) || []
   },

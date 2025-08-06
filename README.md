@@ -67,7 +67,6 @@ npm run test:app
 |------------|----------|
 | `TELEGRAM_BOT_TOKEN` | Токен Telegram бота |
 | `OPENAI_API_KEY` | Ключ OpenAI API |
-| `PERPLEXITY_API_KEY` | Ключ Perplexity API |
 | `SUPABASE_URL` | URL Supabase |
 | `SUPABASE_ANON_KEY` | Ключ Supabase |
 | `ADMIN_CHAT_IDS` | ID администраторов |
@@ -92,7 +91,6 @@ npm run test          # Запуск тестов
 # Проверка и тестирование
 npm run check:env     # Проверка переменных окружения
 npm run test:app      # Тест приложения
-npm run test:perplexity # Тест Perplexity API
 
 # Railway команды
 npm run railway:debug # Диагностика и очистка Railway
@@ -106,7 +104,6 @@ npm run webhook:set   # Настройка webhook
 ## 📚 Документация
 
 - [Настройка Railway](docs/RAILWAY_SETUP.md)
-- [Интеграция Perplexity](docs/PerplexityIntegration.md)
 - [Музыкальный сервис](docs/MusicService.md)
 - [Планировщик уведомлений](docs/NotificationScheduler.md)
 - [Исправление ошибок](docs/DOCKER_FIX.md)
@@ -126,7 +123,6 @@ npm run webhook:set   # Настройка webhook
 - Express.js
 - Telegram Bot API
 - OpenAI API
-- Perplexity API
 - Supabase
 - Winston (логирование)
 - Node-cron (планировщик)

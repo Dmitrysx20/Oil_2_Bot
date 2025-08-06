@@ -49,7 +49,6 @@ NODE_OPTIONS=--no-deprecation --no-warnings
    ```
 4. **Повторите для остальных**:
    ```
-   PERPLEXITY_API_KEY=your_perplexity_api_key_here
    SUPABASE_URL=your_supabase_url_here
    SUPABASE_ANON_KEY=your_supabase_anon_key_here
    ADMIN_CHAT_IDS=123456789,987654321
@@ -81,7 +80,6 @@ npm run railway:debug
 | `NODE_OPTIONS` | `--no-deprecation --no-warnings` | ✅ |
 | `TELEGRAM_BOT_TOKEN` | `your_token_here` | ✅ |
 | `OPENAI_API_KEY` | `your_key_here` | ✅ |
-| `PERPLEXITY_API_KEY` | `your_key_here` | ✅ |
 | `SUPABASE_URL` | `your_url_here` | ✅ |
 | `SUPABASE_ANON_KEY` | `your_key_here` | ✅ |
 | `ADMIN_CHAT_IDS` | `123456789,987654321` | ✅ |

@@ -1,25 +1,24 @@
-require('dotenv').config();
+#!/usr/bin/env node
 
-console.log('🔧 Проверка переменных окружения:');
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-const vars = {
+const envVars = {
   'NODE_ENV': process.env.NODE_ENV,
   'PORT': process.env.PORT,
   'ENABLE_WEBHOOK': process.env.ENABLE_WEBHOOK,
   'WEBHOOK_URL': process.env.WEBHOOK_URL,
   'TELEGRAM_BOT_TOKEN': process.env.TELEGRAM_BOT_TOKEN ? 'настроен' : 'не настроен',
   'OPENAI_API_KEY': process.env.OPENAI_API_KEY ? 'настроен' : 'не настроен',
-  'PERPLEXITY_API_KEY': process.env.PERPLEXITY_API_KEY ? 'настроен' : 'не настроен',
   'SUPABASE_URL': process.env.SUPABASE_URL ? 'настроен' : 'не настроен',
   'SUPABASE_ANON_KEY': process.env.SUPABASE_ANON_KEY ? 'настроен' : 'не настроен',
   'ADMIN_CHAT_IDS': process.env.ADMIN_CHAT_IDS ? 'настроен' : 'не настроен'
 };
 
-for (const [key, value] of Object.entries(vars)) {
+console.log('🔧 Проверка переменных окружения:');
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+Object.entries(envVars).forEach(([key, value]) => {
   const status = value ? '✅' : '❌';
   console.log(`${status} ${key}: ${value || 'не настроен'}`);
-}
+});
 
 console.log('\n📋 Статус webhook:');
 console.log(`   ENABLE_WEBHOOK: ${process.env.ENABLE_WEBHOOK === 'true' ? '✅ ВКЛЮЧЕН' : '❌ ОТКЛЮЧЕН'}`);

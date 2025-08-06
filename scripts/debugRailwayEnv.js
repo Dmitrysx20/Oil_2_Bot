@@ -42,7 +42,6 @@ const allVariables = [
   'NODE_OPTIONS',
   'TELEGRAM_BOT_TOKEN',
   'OPENAI_API_KEY',
-  'PERPLEXITY_API_KEY',
   'SUPABASE_URL',
   'SUPABASE_ANON_KEY',
   'ADMIN_CHAT_IDS',
@@ -102,7 +101,6 @@ console.log('6. После успешной сборки добавьте API к
 console.log('');
 console.log('   TELEGRAM_BOT_TOKEN=your_token_here');
 console.log('   OPENAI_API_KEY=your_key_here');
-console.log('   PERPLEXITY_API_KEY=your_key_here');
 console.log('   SUPABASE_URL=your_url_here');
 console.log('   SUPABASE_ANON_KEY=your_key_here');
 console.log('   ADMIN_CHAT_IDS=123456789,987654321');
