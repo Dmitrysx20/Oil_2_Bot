@@ -19,8 +19,8 @@
 После создания репозитория GitHub покажет инструкции. Выполните следующие команды:
 
 ```bash
-# Добавьте удаленный репозиторий (замените YOUR_USERNAME на ваше имя пользователя)
-git remote add origin https://github.com/YOUR_USERNAME/aroma-helper-bot.git
+# Добавьте удаленный репозиторий
+git remote add origin https://github.com/Dmitrysx20/Oil_Bot.git
 
 # Переименуйте основную ветку в main (если нужно)
 git branch -M main
@@ -126,7 +126,7 @@ ssh-keygen -t ed25519 -C "your_email@example.com"
 ### Использование SSH вместо HTTPS:
 
 ```bash
-git remote set-url origin git@github.com:YOUR_USERNAME/aroma-helper-bot.git
+git remote set-url origin git@github.com:Dmitrysx20/Oil_Bot.git
 ```
 
 ## Настройка GitHub Secrets

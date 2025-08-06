@@ -67,7 +67,7 @@ fi
 if ! git remote get-url origin &> /dev/null; then
     echo "❌ Удаленный репозиторий не настроен!"
     echo "📝 Добавьте удаленный репозиторий:"
-    echo "   git remote add origin https://github.com/YOUR_USERNAME/aroma-helper-bot.git"
+echo "   git remote add origin https://github.com/Dmitrysx20/Oil_Bot.git"
     exit 1
 fi
 

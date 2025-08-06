@@ -1,6 +1,6 @@
 # 🌿 Aroma Helper Bot
 
-[![Node.js CI](https://github.com/YOUR_USERNAME/aroma-helper-bot/workflows/Test%20and%20Deploy/badge.svg)](https://github.com/YOUR_USERNAME/aroma-helper-bot/actions)
+[![Node.js CI](https://github.com/Dmitrysx20/Oil_Bot/workflows/Test%20and%20Deploy/badge.svg)](https://github.com/Dmitrysx20/Oil_Bot/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Telegram Bot](https://img.shields.io/badge/Telegram-Bot-blue.svg)](https://t.me/your_bot_username)
 
@@ -30,8 +30,8 @@
 
 ```bash
 # Клонирование репозитория
-git clone https://github.com/YOUR_USERNAME/aroma-helper-bot.git
-cd aroma-helper-bot
+git clone https://github.com/Dmitrysx20/Oil_Bot.git
+cd Oil_Bot
 
 # Установка зависимостей
 npm install
@@ -252,7 +252,7 @@ POST /webhook
 Если у вас есть вопросы или проблемы:
 
 1. Проверьте [документацию](docs/)
-2. Создайте [Issue](https://github.com/YOUR_USERNAME/aroma-helper-bot/issues)
+2. Создайте [Issue](https://github.com/Dmitrysx20/Oil_Bot/issues)
 3. Обратитесь к [руководству по миграции](docs/migration-guide.md)
 
 ## 🌟 Звезды
