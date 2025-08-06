@@ -1,0 +1,13 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "node --no-deprecation app.js"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+[deploy.variables]
+NODE_NO_WARNINGS = "1"
+NODE_OPTIONS = "--no-deprecation --no-warnings" 

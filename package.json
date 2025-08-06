@@ -7,11 +7,11 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js",
+    "start": "node --no-deprecation app.js",
+    "dev": "nodemon --no-deprecation app.js",
     "test": "jest",
-    "migrate": "node migrations/run.js",
-    "webhook:set": "node scripts/setWebhook.js"
+    "migrate": "node --no-deprecation migrations/run.js",
+    "webhook:set": "node --no-deprecation scripts/setWebhook.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
