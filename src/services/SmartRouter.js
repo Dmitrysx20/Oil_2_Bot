@@ -1,5 +1,5 @@
 const logger = require('../utils/logger');
-const { normalizeText, fixCommonTypos } = require('../utils/textNormalizer');
+const { normalizeText, fixCommonTypos, extractOilName } = require('../utils/textNormalizer');
 
 class SmartRouter {
   constructor() {
@@ -419,20 +419,32 @@ class SmartRouter {
   }
 
   findOil(normalizedText) {
-    // Проверяем неоднозначность
-    for (const [ambiguousKey, options] of Object.entries(this.ambiguousOils)) {
-      if (normalizedText.includes(ambiguousKey)) {
-        return {
-          isAmbiguous: true,
-          query: normalizedText,
-          key: ambiguousKey,
-          options: options,
-          defaultChoice: options[0]
-        };
+    // Сначала используем систему нормализации для поиска масел
+    const extractedOil = extractOilName(normalizedText);
+    
+    if (extractedOil) {
+      // Проверяем неоднозначность
+      for (const [ambiguousKey, options] of Object.entries(this.ambiguousOils)) {
+        if (extractedOil.toLowerCase() === ambiguousKey) {
+          return {
+            isAmbiguous: true,
+            query: normalizedText,
+            key: ambiguousKey,
+            options: options,
+            defaultChoice: options[0]
+          };
+        }
       }
+
+      // Если масло найдено и не неоднозначно, возвращаем результат
+      return {
+        isAmbiguous: false,
+        result: extractedOil,
+        query: extractedOil
+      };
     }
 
-    // Проверяем прямые совпадения
+    // Fallback: проверяем прямые совпадения в словаре
     for (const [searchTerm, oilName] of Object.entries(this.oilDictionary)) {
       if (normalizedText.includes(searchTerm)) {
         return {
