@@ -1,0 +1,2616 @@
+{
+  "name": "Масло_Рабочий",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        384,
+        -144
+      ],
+      "id": "8ec4529c-3e3c-4edb-953f-9315240d76f9",
+      "name": "Telegram Trigger",
+      "webhookId": "ba91aeff-e57e-4f70-9712-28f5dc1d4964",
+      "credentials": {
+        "telegramApi": {
+          "id": "r86pcb9P39ijiBL9",
+          "name": "Эфирные масла "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Smart Router').first().json.chatId }}",
+        "text": "={{(() => {\n  if ($json.error) {\n    const suggestions = $json.suggestions || [];\n    const searchedName = $json.searchedName || 'неизвестное масло';\n    \n    let message = `🔍 Не нашел масло \"${searchedName}\".\\n\\n`;\n    \n    if (suggestions.length > 0) {\n      message += `💡 Возможно, ты искал:\\n`;\n      suggestions.slice(0, 5).forEach(suggestion => {\n        message += `• ${suggestion}\\n`;\n      });\n      message += '\\n';\n    }\n    \n    message += `🎯 Как правильно искать:\\n`;\n    message += `• Просто название: \"лаванда\", \"мята\"\\n`;\n    message += `• С командой: \"расскажи про эвкалипт\"\\n`;\n    message += `• По эффекту: \"нужна энергия\", \"хочу расслабиться\"`;\n    \n    return message;\n  }\n  \n  let message = `🌿 ${$json.oil_name}\\n${$json.description}\\n\\n`;\n  message += `🧠 Эмоциональный эффект:\\n${$json.emotional_effect}\\n\\n`;\n  message += `💪 Физический эффект:\\n${$json.physical_effect}\\n\\n`;\n  message += `🧴 Применение:\\n${$json.applications}\\n\\n`;\n  message += `⚠️ Осторожно:\\n${$json.safety_warning}\\n\\n`;\n  \n  if ($json.keywords) {\n    message += `🏷️ Ключевые свойства: ${$json.keywords}\\n\\n`;\n  }\n  \n  message += `😄 Кстати:\\n${$json.joke}`;\n  \n  return message;\n})()}}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🏠 Главное меню",
+                    "additionalFields": {
+                      "callback_data": "=main_menu"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2240,
+        -320
+      ],
+      "id": "0aad1271-f4cc-49f5-b197-46762bca2d34",
+      "name": "Telegram Sender",
+      "webhookId": "63ba91f1-e2e4-439b-9304-62bb76a7925c",
+      "credentials": {
+        "telegramApi": {
+          "id": "r86pcb9P39ijiBL9",
+          "name": "Эфирные масла "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Улучшенный Filter Matching Oil для работы с 120 маслами\nconst supabaseResults = $input.all();\n\nconsole.log('=== SUPABASE NATIVE NODE RESULTS ===');\nconsole.log('Total results:', supabaseResults.length);\n\n// Получаем данные от Smart Router\nconst smartRouterData = $('Smart Router').first().json;\nconsole.log('Smart Router data:', smartRouterData);\n\n// Проверяем есть ли результаты от Supabase\nif (!Array.isArray(supabaseResults) || supabaseResults.length === 0) {\n  console.log('❌ No results from Supabase');\n  \n  // Улучшенные предложения на основе поискового запроса\n  const originalQuery = smartRouterData.oilName || smartRouterData.originalText || '';\n  const suggestions = getSuggestions(originalQuery);\n  \n  return [{\n    json: {\n      error: \"Масло не найдено\",\n      searchedName: smartRouterData.normalizedOilName || originalQuery,\n      originalQuery: smartRouterData.oilName || originalQuery,\n      chatId: smartRouterData.chatId,\n      debug: {\n        supabaseResults: supabaseResults.length,\n        searchedFor: smartRouterData.normalizedOilName,\n        detectedCommand: smartRouterData.detectedCommand\n      },\n      suggestions: suggestions\n    }\n  }];\n}\n\n// Берем первый результат (должен быть единственный благодаря фильтру)\nconst foundOil = supabaseResults[0].json;\nconsole.log('✅ Found oil:', foundOil.oil_name);\nconsole.log('Oil data keys:', Object.keys(foundOil));\n\n// Проверяем что у масла есть все нужные поля\nconst requiredFields = ['oil_name', 'description', 'emotional_effect', 'physical_effect', 'applications', 'safety_warning', 'joke'];\nconst missingFields = requiredFields.filter(field => !foundOil[field]);\n\nif (missingFields.length > 0) {\n  console.log('⚠️ Missing fields:', missingFields);\n}\n\n// Возвращаем найденное масло с метаданными\nreturn [{\n  json: {\n    // Все поля масла\n    oil_name: foundOil.oil_name,\n    description: foundOil.description,\n    emotional_effect: foundOil.emotional_effect,\n    physical_effect: foundOil.physical_effect,\n    applications: foundOil.applications,\n    safety_warning: foundOil.safety_warning,\n    joke: foundOil.joke,\n    keywords: foundOil.keywords,\n    \n    // Метаданные для дальнейшей обработки\n    chatId: smartRouterData.chatId,\n    searchType: 'direct',\n    foundBy: 'native_supabase_filter',\n    searchedFor: smartRouterData.normalizedOilName,\n    originalQuery: smartRouterData.oilName,\n    detectedCommand: smartRouterData.detectedCommand,\n    \n    // Отладочная информация\n    debug: {\n      foundOilName: foundOil.oil_name,\n      totalResults: supabaseResults.length,\n      hasAllFields: missingFields.length === 0,\n      searchMethod: 'exact_match'\n    }\n  }\n}];\n\n// Функция для генерации умных предложений\nfunction getSuggestions(query) {\n  const lowerQuery = query.toLowerCase();\n  \n  // Популярные масла по категориям\n  const popularOils = {\n    citrus: ['Лимон', 'Дикий апельсин', 'Грейпфрут', 'Лайм', 'Бергамот'],\n    relaxing: ['Лаванда', 'Ромашка', 'Иланг-иланг', 'Баланс', 'Виспер'],\n    energizing: ['Мята перечная', 'Розмарин', 'Эвкалипт', 'Мотивейт', 'Чир'],\n    healing: ['Чайное дерево', 'Ладан', 'Гелихризум', 'Мелалеука', 'Стронгер'],\n    blends: ['ДайджестЗен', 'Изи Эйр', 'Дип Блу', 'Ситрус Блисс', 'АромаТач']\n  };\n  \n  // Определяем категорию по запросу\n  if (/цитрус|апельсин|лимон|лайм|свеж/.test(lowerQuery)) {\n    return popularOils.citrus.map(oil => `Попробуй: \"${oil}\"`);\n  }\n  \n  if (/спокой|релакс|сон|расслаб|стресс/.test(lowerQuery)) {\n    return popularOils.relaxing.map(oil => `Попробуй: \"${oil}\"`);\n  }\n  \n  if (/энерг|бодр|актив|мотив|сил/.test(lowerQuery)) {\n    return popularOils.energizing.map(oil => `Попробуй: \"${oil}\"`);\n  }\n  \n  if (/лечен|здоров|болезн|простуд|лечит/.test(lowerQuery)) {\n    return popularOils.healing.map(oil => `Попробуй: \"${oil}\"`);\n  }\n  \n  if (/смесь|блен|комплекс/.test(lowerQuery)) {\n    return popularOils.blends.map(oil => `Попробуй: \"${oil}\"`);\n  }\n  \n  // Базовые предложения\n  return [\n    'Попробуй: \"Лаванда\" - для спокойствия',\n    'Попробуй: \"Мята перечная\" - для энергии', \n    'Попробуй: \"Лимон\" - для настроения',\n    'Или напиши: \"расскажи про эвкалипт\"',\n    'Или просто: \"нужна энергия\"'\n  ];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1984,
+        -288
+      ],
+      "id": "d89e8473-39e8-4c72-8289-9648127373a1",
+      "name": "Filter Matching Oil"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "🌿 **Привет! Я твой Арома-помощник!** 🌿\n\n✨ **Что я умею:**\n\n🔍 **Рассказать про любое масло:**\n- Просто напиши: \"мята\", \"лаванда\", \"лимон\"\n- Или: \"расскажи про эвкалипт\"\n\n🤖 **Дать научные рекомендации:**\n- \"нужна энергия\" → рекомендации с исследованиями\n- \"хочу расслабиться\" → советы экспертов\n- \"простуда\" → актуальные данные о лечении\n\nПросто напиши что тебя интересует! 😊",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🏠 Главное меню",
+                    "additionalFields": {
+                      "callback_data": "main_menu"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2048,
+        192
+      ],
+      "id": "5881624b-753c-45d4-a446-d4d63d298700",
+      "name": "Default Response",
+      "webhookId": "dd82cb6a-a1f9-4c17-bb5b-240bd4192437",
+      "credentials": {
+        "telegramApi": {
+          "id": "r86pcb9P39ijiBL9",
+          "name": "Эфирные масла "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "24706d2b-aaba-4878-b6cd-66ddbf0c1959",
+              "leftValue": "={{ $json.requestType }}",
+              "rightValue": "direct_search",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1552,
+        -144
+      ],
+      "id": "2262bde3-8570-4980-8797-d874c34e5632",
+      "name": "IF Direct Search"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 🧠 SMART ROUTER v2.1 - ИСПРАВЛЕННАЯ ВЕРСИЯ \nconst input = $input.first();\n\n// ========== ПРОВЕРКА ВХОДНЫХ ДАННЫХ ==========\nif (!input || !input.json) {\n  console.log('❌ No input data received');\n  return [{\n    json: {\n      originalText: '',\n      normalizedText: '',\n      requestType: 'default',\n      chatId: 'unknown',\n      error: 'No input data'\n    }\n  }];\n}\n\nconsole.log('📨 Full input received:', JSON.stringify(input.json, null, 2));\n\n// ========== ИНИЦИАЛИЗАЦИЯ БАЗОВЫХ ПЕРЕМЕННЫХ ==========\nlet rawText = '';\nlet chatId = 'unknown';\nlet userName = '';\nlet callbackData = '';\n\n// ========== ОБРАБОТКА CALLBACK QUERIES ==========\nconst isCallback = input?.json?.callback_query ? true : false;\n\nif (isCallback) {\n  callbackData = input.json.callback_query.data || '';\n  chatId = input.json.callback_query.message.chat.id;\n  userName = input.json.callback_query.from.first_name || 'User';\n  rawText = `callback:${callbackData}`;\n  \n  console.log('🔘 Callback received:', callbackData);\n  \n  // Callback для подписок\n  if (callbackData.includes('subscribe') || callbackData.includes('unsubscribe') || \n      callbackData.includes('time_settings') || callbackData.includes('notifications')) {\n    \n    return [{\n      json: {\n        originalText: rawText,\n        normalizedText: callbackData,\n        requestType: 'subscription_management',\n        chatId: chatId,\n        userName: userName,\n        subscriptionAction: callbackData,\n        callbackQueryId: input.json.callback_query.id\n      }\n    }];\n  }\n  \n  // Админские callback\n  if (callbackData.startsWith('admin_')) {\n    return [{\n      json: {\n        originalText: rawText,\n        normalizedText: callbackData,\n        requestType: 'admin_callback',\n        chatId: chatId,\n        adminAction: callbackData\n      }\n    }];\n  }\n  \n  // Остальные callback\n  return [{\n    json: {\n      originalText: rawText,\n      normalizedText: callbackData,\n      requestType: 'callback_query',\n      chatId: chatId,\n      callbackData: callbackData,\n      callbackQueryId: input.json.callback_query.id\n    }\n  }];\n}\n\n// ========== ОБРАБОТКА ОБЫЧНЫХ СООБЩЕНИЙ ==========\nrawText = (input?.json?.message?.text || '').trim();\nchatId = input?.json?.message?.chat?.id || 'unknown';\nuserName = input?.json?.message?.from?.first_name || 'User';\n\nif (!rawText) {\n  console.log('❌ No text in message');\n  return [{\n    json: {\n      originalText: '',\n      normalizedText: '',\n      requestType: 'empty_message',\n      chatId: chatId,\n      error: 'No text provided'\n    }\n  }];\n}\n\nconsole.log('💬 Raw input:', rawText);\nconsole.log('👤 Chat ID:', chatId);\nconsole.log('🏷️ User:', userName);\n\n// Нормализуем текст для анализа\nconst normalizedText = rawText.toLowerCase()\n  .replace(/[.,!?;:()\\\"]/g, ' ')\n  .replace(/\\s+/g, ' ')\n  .trim();\n\nconsole.log('🔄 Normalized:', normalizedText);\n\n// ========== 2. КОМАНДЫ БОТА ==========\nif (rawText.startsWith('/')) {\n  const command = rawText.split(' ')[0];\n  \n  switch (command) {\n    case '/start':\n      return [{\n        json: {\n          originalText: rawText,\n          normalizedText: normalizedText,\n          requestType: 'start_command',\n          chatId: chatId,\n          userName: userName\n        }\n      }];\n      \n    case '/help':\n      return [{\n        json: {\n          originalText: rawText,\n          normalizedText: normalizedText,\n          requestType: 'help_command',\n          chatId: chatId\n        }\n      }];\n      \n    case '/menu':\n      return [{\n        json: {\n          originalText: rawText,\n          normalizedText: normalizedText,\n          requestType: 'menu_command',\n          chatId: chatId\n        }\n      }];\n\n    case '/admin':\n    case '/stats':\n    case '/broadcast':\n    case '/users':\n    case '/music':\n    case '/export':\n    case '/dashboard':\n      return [{\n        json: {\n          originalText: rawText,\n          normalizedText: normalizedText,\n          requestType: 'admin_command',\n          chatId: chatId,\n          command: command\n        }\n      }];\n      \n    default:\n      return [{\n        json: {\n          originalText: rawText,\n          normalizedText: normalizedText,\n          requestType: 'unknown_command',\n          chatId: chatId,\n          command: command\n        }\n      }];\n  }\n}\n\n// ========== 1. ПРИОРИТЕТ: ПОДТВЕРЖДЕНИЯ ПОДПИСКИ ==========\nconst confirmationPatterns = [\n  // Подтверждение подписки\n  { pattern: 'да подписаться', type: 'confirm_subscribe' },\n  { pattern: 'да, подписаться', type: 'confirm_subscribe' },\n  { pattern: 'подтверждаю подписку', type: 'confirm_subscribe' },\n  { pattern: 'согласен подписаться', type: 'confirm_subscribe' },\n  \n  // Подтверждение отписки\n  { pattern: 'да отписаться', type: 'confirm_unsubscribe' },\n  { pattern: 'да, отписаться', type: 'confirm_unsubscribe' },\n  { pattern: 'подтверждаю отписку', type: 'confirm_unsubscribe' },\n  \n  // Запросы информации\n  { pattern: 'расскажи подробнее', type: 'request_details' },\n  { pattern: 'подробнее о подписке', type: 'request_details' },\n  { pattern: 'что это за подписка', type: 'request_details' },\n  { pattern: 'как это работает', type: 'request_details' },\n  \n  // Настройки\n  { pattern: 'настройки времени', type: 'time_settings' },\n  { pattern: 'изменить время', type: 'time_settings' },\n  { pattern: 'настройки музыки', type: 'music_settings' },\n  { pattern: 'только утром', type: 'morning_only' },\n  { pattern: 'только вечером', type: 'evening_only' },\n  { pattern: 'часовой пояс', type: 'timezone_settings' },\n  \n  // Отмена/пауза\n  { pattern: 'не сейчас', type: 'cancel_action' },\n  { pattern: 'передумал', type: 'cancel_action' },\n  { pattern: 'пауза на неделю', type: 'pause_subscription' },\n  { pattern: 'изменить настройки', type: 'modify_settings' },\n  \n  // Дополнительные\n  { pattern: 'примеры музыки', type: 'music_examples' },\n  { pattern: 'у меня вопрос', type: 'ask_question' },\n  { pattern: 'настройки готовы', type: 'settings_complete' }\n];\n\n// Проверяем подтверждения (ВЫСШИЙ ПРИОРИТЕТ!)\nfor (const { pattern, type } of confirmationPatterns) {\n  if (normalizedText.includes(pattern)) {\n    console.log('✅ Subscription confirmation detected:', pattern, '→', type);\n    \n    return [{\n      json: {\n        originalText: rawText,\n        normalizedText: normalizedText,\n        requestType: 'subscription_confirmation',\n        chatId: chatId,\n        userName: userName,\n        confirmationType: type,\n        matchedPattern: pattern\n      }\n    }];\n  }\n}\n\n// ========== 3. ОБРАБОТКА ПОДПИСОК (после подтверждений!) ==========\nconst subscriptionKeywords = [\n  'подпис', 'уведомлен', 'рассылк', 'напоминан', 'получать уведомления',\n  'отпис', 'отключ уведомления', 'настройк уведомлений'\n];\n\n// Проверяем ТОЛЬКО если это не подтверждение\nlet isSubscriptionRequest = false;\nlet subscriptionKeyword = '';\n\nfor (const keyword of subscriptionKeywords) {\n  if (normalizedText.includes(keyword)) {\n    // Дополнительная проверка - это НЕ подтверждение\n    const isNotConfirmation = !normalizedText.includes('да') && \n                             !normalizedText.includes('подтверждаю') &&\n                             !normalizedText.includes('согласен');\n    \n    if (isNotConfirmation) {\n      isSubscriptionRequest = true;\n      subscriptionKeyword = keyword;\n      break;\n    }\n  }\n}\n\nif (isSubscriptionRequest) {\n  console.log('🔔 Subscription request detected:', subscriptionKeyword);\n  \n  return [{\n    json: {\n      originalText: rawText,\n      normalizedText: normalizedText,\n      requestType: 'subscription_inquiry',\n      chatId: chatId,\n      userName: userName,\n      keyword: subscriptionKeyword\n    }\n  }];\n}\n\n// ========== 4. МУЗЫКАЛЬНЫЕ ЗАПРОСЫ ==========\nconst musicKeywords = [\n  'музыка', 'песня', 'плейлист', 'послушать', 'композиция', 'трек',\n  'spotify', 'youtube', 'apple music', 'yandex music', 'включи музыку',\n  'музыка на сегодня', 'что послушать'\n];\n\nfor (const keyword of musicKeywords) {\n  if (normalizedText.includes(keyword)) {\n    console.log('🎵 Music request detected:', keyword);\n    \n    // Определяем настроение для музыки\n    let detectedMood = null;\n    const moodKeywords = {\n      'расслабляющая': ['расслаб', 'релакс', 'спокой', 'медитац'],\n      'энергичная': ['энерг', 'бодр', 'активн', 'мотивац', 'спорт'],\n      'для сна': ['сон', 'засыпан', 'ночн', 'усыпляющ'],\n      'для работы': ['работ', 'концентрац', 'фокус', 'учеб']\n    };\n    \n    for (const [mood, keywords] of Object.entries(moodKeywords)) {\n      for (const moodKeyword of keywords) {\n        if (normalizedText.includes(moodKeyword)) {\n          detectedMood = mood;\n          break;\n        }\n      }\n      if (detectedMood) break;\n    }\n    \n    return [{\n      json: {\n        originalText: rawText,\n        normalizedText: normalizedText,\n        requestType: 'music_request',\n        chatId: chatId,\n        userName: userName,\n        musicKeyword: keyword,\n        requestedMood: detectedMood,\n        timeOfDay: new Date().getHours() < 12 ? 'morning' : 'evening'\n      }\n    }];\n  }\n}\n\n// ========== 5. ОПРЕДЕЛЕНИЕ НАСТРОЕНИЯ ==========\nconst moodKeywords = {\n  'стресс': ['стресс', 'напряжение', 'нервы', 'тревог', 'беспокой', 'волнен'],\n  'усталость': ['устал', 'усталость', 'сил нет', 'вымотан', 'изможден', 'энергии нет'],\n  'грусть': ['грустн', 'печаль', 'тоск', 'депресс', 'уныни', 'плохо на душе'],\n  'бессонница': ['не сплю', 'бессонница', 'не засыпаю', 'плохо сплю', 'просыпаюсь'],\n  'головная_боль': ['болит голова', 'головная боль', 'мигрень', 'голова раскалывается'],\n  'концентрация': ['сосредоточиться', 'концентрация', 'внимание', 'фокус', 'работа'],\n  'энергия': ['энергии', 'бодрость', 'активность', 'силы', 'мотивация'],\n  'спокойствие': ['спокойствие', 'релакс', 'расслабление', 'умиротворение'],\n  'любовь': ['романтика', 'любовь', 'свидание', 'отношения', 'страсть'],\n  'радость': ['радость', 'веселье', 'позитив', 'хорошее настроение', 'счастье']\n};\n\nlet detectedMood = null;\nlet moodScore = 0;\n\nfor (const [mood, keywords] of Object.entries(moodKeywords)) {\n  for (const keyword of keywords) {\n    if (normalizedText.includes(keyword)) {\n      const currentScore = keyword.length;\n      if (currentScore > moodScore) {\n        detectedMood = mood;\n        moodScore = currentScore;\n      }\n    }\n  }\n}\n\nif (detectedMood) {\n  console.log(`😊 Detected mood: ${detectedMood} (score: ${moodScore})`);\n  return [{\n    json: {\n      originalText: rawText,\n      normalizedText: normalizedText,\n      requestType: 'mood_request',\n      chatId: chatId,\n      detectedMood: detectedMood,\n      confidence: moodScore\n    }\n  }];\n}\n\n// ========== 6. ПОИСК КОНКРЕТНЫХ МАСЕЛ ==========\nconst oilSearchTerms = [\n  'лаванда', 'эвкалипт', 'мята', 'лимон', 'апельсин', 'роза', 'жасмин',\n  'чайное дерево', 'розмарин', 'герань', 'бергамот', 'иланг', 'пачули',\n  'сандал', 'кедр', 'сосна', 'можжевельник', 'лемонграсс', 'базилик',\n  'орегано', 'тимьян', 'мелисса', 'ромашка', 'календула', 'шалфей',\n  'грейпфрут', 'лайм', 'мандарин', 'нероли', 'петитгрейн', 'ветивер'\n];\n\nlet foundOil = null;\nlet oilScore = 0;\n\nfor (const oil of oilSearchTerms) {\n  if (normalizedText.includes(oil)) {\n    const currentScore = oil.length;\n    if (currentScore > oilScore) {\n      foundOil = oil;\n      oilScore = currentScore;\n    }\n  }\n}\n\nif (foundOil) {\n  console.log(`🌿 Found oil: ${foundOil} (score: ${oilScore})`);\n  return [{\n    json: {\n      originalText: rawText,\n      normalizedText: normalizedText,\n      requestType: 'direct_search',\n      chatId: chatId,\n      oilName: foundOil,\n      normalizedOilName: foundOil,\n      confidence: oilScore\n    }\n  }];\n}\n\n// ========== 7. КАТЕГОРИИ МАСЕЛ ==========\nconst categoryKeywords = {\n  'цитрусовые': ['цитрус', 'лимон', 'апельсин', 'грейпфрут', 'мандарин', 'лайм'],\n  'цветочные': ['цветочн', 'роза', 'жасмин', 'герань', 'лаванда', 'ромашка'],\n  'древесные': ['древесн', 'сандал', 'кедр', 'сосна', 'можжевельник'],\n  'травяные': ['травян', 'базилик', 'розмарин', 'тимьян', 'шалфей', 'мята'],\n  'смолистые': ['смолист', 'ладан', 'мирра', 'копал'],\n  'пряные': ['прян', 'корица', 'гвоздика', 'имбирь', 'кардамон']\n};\n\nlet detectedCategory = null;\nlet categoryScore = 0;\n\nfor (const [category, keywords] of Object.entries(categoryKeywords)) {\n  for (const keyword of keywords) {\n    if (normalizedText.includes(keyword)) {\n      const currentScore = keyword.length;\n      if (currentScore > categoryScore) {\n        detectedCategory = category;\n        categoryScore = currentScore;\n      }\n    }\n  }\n}\n\nif (detectedCategory) {\n  console.log(`📂 Detected category: ${detectedCategory} (score: ${categoryScore})`);\n  return [{\n    json: {\n      originalText: rawText,\n      normalizedText: normalizedText,\n      requestType: 'category_request',\n      chatId: chatId,\n      requestedCategory: detectedCategory,\n      confidence: categoryScore\n    }\n  }];\n}\n\n// ========== 8. ОБЩИЕ ВОПРОСЫ ОБ АРОМАТЕРАПИИ ==========\nconst generalKeywords = [\n  'что такое ароматерапия', 'как использовать', 'ароматерапия',\n  'эфирные масла', 'как применять', 'польза масел', 'свойства масел',\n  'диффузор', 'массаж', 'ингаляция', 'компресс'\n];\n\nfor (const keyword of generalKeywords) {\n  if (normalizedText.includes(keyword)) {\n    console.log(`ℹ️ General aromatherapy question: ${keyword}`);\n    return [{\n      json: {\n        originalText: rawText,\n        normalizedText: normalizedText,\n        requestType: 'general_aromatherapy',\n        chatId: chatId,\n        keyword: keyword\n      }\n    }];\n  }\n}\n\n// ========== 9. ПРИВЕТСТВИЯ И БЛАГОДАРНОСТИ ==========\nconst greetingKeywords = [\n  'привет', 'здравствуй', 'добр', 'спасибо', 'благодар'\n];\n\nfor (const greeting of greetingKeywords) {\n  if (normalizedText.includes(greeting)) {\n    console.log(`👋 Greeting detected: ${greeting}`);\n    return [{\n      json: {\n        originalText: rawText,\n        normalizedText: normalizedText,\n        requestType: 'greeting',\n        chatId: chatId,\n        greetingType: greeting\n      }\n    }];\n  }\n}\n\n// ========== 10. FALLBACK - НЕОПОЗНАННЫЙ ЗАПРОС ==========\nconsole.log('❓ Unknown request type');\nreturn [{\n  json: {\n    originalText: rawText,\n    normalizedText: normalizedText,\n    requestType: 'unknown',\n    chatId: chatId,\n    needsHumanAnalysis: true,\n    userActivity: {\n      chatId: chatId,\n      userName: userName,\n      timestamp: new Date().toISOString(),\n      messageType: 'text'\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        -144
+      ],
+      "id": "f0d94d86-3c1d-406f-8c90-081c4bf34a77",
+      "name": "Smart Router"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "oils",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "oil_name",
+              "condition": "ilike",
+              "keyValue": "=%{{ $json.normalizedOilName }}%"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1728,
+        -240
+      ],
+      "id": "3eb8566d-9f2a-4420-bc08-11e1578bc9d8",
+      "name": "Supabase2",
+      "credentials": {
+        "supabaseApi": {
+          "id": "jyysiKb0eSXuvPiH",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7afe1d6e-1a7d-4c4b-8062-1ac9bcdcffbc",
+              "leftValue": "={{ $json.requestType }}",
+              "rightValue": "keyword_search",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1792,
+        -16
+      ],
+      "id": "a041fede-6c8d-4250-a790-55f273d65c40",
+      "name": "keyword_search",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "oils"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2064,
+        -80
+      ],
+      "id": "5410e8a0-f941-4c88-a52d-c1d0d5028076",
+      "name": "Get All Oils for AI",
+      "credentials": {
+        "supabaseApi": {
+          "id": "jyysiKb0eSXuvPiH",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "df38d20b-d97c-4b94-9cb3-f09d203972fa",
+              "leftValue": "={{ $json.requestType }}",
+              "rightValue": "start_command",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1280,
+        -144
+      ],
+      "id": "1b92bae9-38aa-46b7-8930-8d3030a4fcd1",
+      "name": "IF Start Command",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Smart Router').first().json.chatId }}",
+        "text": "={{ $('Smart Router').item.json.originalText }}\n        🌿 **АРОМА-ПОМОЩНИК** 🌿\n\n✨ Добро пожаловать в мир эфирных масел! ✨\n\nЯ твой персональный гид по ароматерапии 🧙‍♂️\n\n━━━━━━━━━━━━━━━━━━━━━━\n💬 **Напиши название масла** (мята, лаванда, лимон...)\n🎯 **Или выбери быструю помощь:**\n🔮 **Внимание:** Кнопки активируют древний ритуал поиска знаний!\n🧙‍♂️ Призываю духов ароматерапии и консультируюсь с мудрецами...\n⏳ Магия требует времени - около 40 секунд! ✨",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "⚡ ЭНЕРГИЯ & БОДРОСТЬ",
+                    "additionalFields": {
+                      "callback_data": "need_energy"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🧘‍♀️ РЕЛАКС & СОН",
+                    "additionalFields": {
+                      "callback_data": "want_relax"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🏥 ЗДОРОВЬЕ",
+                    "additionalFields": {
+                      "callback_data": "health_issues"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "💡 ПОМОЩЬ",
+                    "additionalFields": {
+                      "callback_data": "help_menu"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Запись на Аромадиагностику",
+                    "additionalFields": {
+                      "callback_data": "program_21"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1472,
+        -336
+      ],
+      "id": "f62f9ab9-87c7-4516-93c3-1f146abb835b",
+      "name": "Start Response",
+      "webhookId": "1b20dc7c-288b-41b6-82bd-c68946ce2219",
+      "credentials": {
+        "telegramApi": {
+          "id": "r86pcb9P39ijiBL9",
+          "name": "Эфирные масла "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2944,
+        64
+      ],
+      "id": "df0c50ba-fe06-447f-b6ec-5560158a070e",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "pLvgZqZjmESpZh3A",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Smart Router').first().json.chatId }}",
+        "text": "={{ $json.output }}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🏠 Главное меню",
+                    "additionalFields": {
+                      "callback_data": "main_menu"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3424,
+        -176
+      ],
+      "id": "4ea8c9d8-6526-44fc-9a4e-88f8e3f92518",
+      "name": "Telegram AI Response",
+      "webhookId": "c8146fb9-f142-4594-9a95-1fd443da1ef3",
+      "credentials": {
+        "telegramApi": {
+          "id": "r86pcb9P39ijiBL9",
+          "name": "Эфирные масла "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Исправленный AI Agent код с правильной маршрутизацией\nconst userRequest = $('Smart Router').first().json;\nconst oilsData = $('Get All Oils for AI').all();\n\nconsole.log('🤖 AI Agent код: получены данные');\nconsole.log('📋 User request:', JSON.stringify(userRequest, null, 2));\nconsole.log('💊 Medical info найдена:', userRequest.medicalInfo ? 'ДА' : 'НЕТ');\nconsole.log('🏥 Категория:', userRequest.medicalInfo?.category);\nconsole.log('🎯 Request type:', userRequest.requestType);\n\n// Безопасно получаем данные\nconst keywords = userRequest.keywords || [];\nconst userQuery = userRequest.userQuery || userRequest.originalText || 'помощь';\nconst medicalInfo = userRequest.medicalInfo || null;\n\nconsole.log('Keywords:', keywords);\nconsole.log('User query:', userQuery);\nconsole.log('Medical info:', medicalInfo);\n\n// 🆕 ЛОГИКА ОПРЕДЕЛЕНИЯ ТИПА АГЕНТА\nlet needsPerplexitySearch = false;\nlet requestContext = '';\nlet searchQueries = [];\nlet specialInstructions = '';\n\n// ============================================\n// 🔥 КЛЮЧЕВАЯ ЛОГИКА ВЫБОРА АГЕНТА\n// ============================================\n\n// 1. КНОПОЧНЫЕ ЗАПРОСЫ → AI Agent. Fast (БЕЗ Perplexity)\nif (userRequest.isCallbackQuery && \n    (userRequest.originalText === 'нужна энергия' || \n     userRequest.originalText === 'хочу расслабиться' || \n     userRequest.originalText === 'простуда')) {\n  \n  console.log('🔘 КНОПОЧНЫЙ ЗАПРОС → AI Agent. Fast');\n  needsPerplexitySearch = false;\n  \n  if (keywords.includes('энергия')) {\n    requestContext = 'ЭНЕРГИЯ И БОДРОСТЬ';\n  } else if (keywords.includes('спокойствие')) {\n    requestContext = 'РАССЛАБЛЕНИЕ И ПОКОЙ';\n  } else if (keywords.includes('простуда')) {\n    requestContext = 'ЗДОРОВЬЕ И ЛЕЧЕНИЕ';\n  } else {\n    requestContext = 'ОБЩИЕ РЕКОМЕНДАЦИИ';\n  }\n}\n\n// 2. СЛОЖНЫЕ МЕДИЦИНСКИЕ ЗАПРОСЫ → AI Agent Perplexity) (С Perplexity)\nelse if (medicalInfo && medicalInfo.category) {\n  console.log('🏥 МЕДИЦИНСКИЙ ЗАПРОС → AI Agent Perplexity)');\n  needsPerplexitySearch = true;\n  \n  switch(medicalInfo.category) {\n    case 'головная_боль':\n      requestContext = 'ГОЛОВНАЯ БОЛЬ И МИГРЕНЬ';\n      searchQueries = [\n        'эфирные масла головная боль мигрень исследования 2024',\n        'лаванда мята перечная от головной боли клинические данные',\n        'ароматерапия мигрень эффективность научные доказательства'\n      ];\n      specialInstructions = 'Акцент на безопасность при мигрени, дозировки, способы применения. Обязательно упомянуть необходимость консультации врача при частых головных болях.';\n      break;\n\n    case 'желудочно_кишечные':\n      requestContext = 'ПИЩЕВАРЕНИЕ И ЖКТ';\n      searchQueries = [\n        'эфирные масла пищеварение желудок научные исследования',\n        'мята имбирь фенхель пищеварение ароматерапия',\n        'эфирные масла при тошноте изжоге спазмах ЖКТ'\n      ];\n      specialInstructions = 'Подчеркнуть важность качества масел для внутреннего применения. Дать четкие инструкции по разведению и дозировке.';\n      break;\n\n    case 'женское_здоровье':\n      requestContext = 'ЖЕНСКОЕ ЗДОРОВЬЕ И ПМС';\n      searchQueries = [\n        'эфирные масла ПМС женское здоровье гормональный баланс',\n        'шалфей мускатный герань женские циклы исследования',\n        'ароматерапия менструальные боли спазмы научные данные'\n      ];\n      specialInstructions = 'Акцент на гормональную поддержку, эмоциональное равновесие, облегчение физических симптомов. Предупреждения для беременных.';\n      break;\n\n    case 'дыхательная_система':\n      requestContext = 'ДЫХАТЕЛЬНАЯ СИСТЕМА И ПРОСТУДА';\n      searchQueries = [\n        'эвкалипт чайное дерево простуда дыхательные пути',\n        'эфирные масла противовирусные свойства респираторные инфекции',\n        'ароматерапия кашель насморк заложенность носа'\n      ];\n      specialInstructions = 'Фокус на противовирусных и отхаркивающих свойствах. Методы ингаляций и безопасного применения при респираторных проблемах.';\n      break;\n\n    case 'нервная_система':\n      requestContext = 'НЕРВНАЯ СИСТЕМА И СТРЕСС';\n      searchQueries = [\n        'эфирные масла стресс тревожность кортизол исследования',\n        'лаванда бергамот ромашка нервная система научные данные',\n        'ароматерапия депрессия эмоциональное здоровье эффективность'\n      ];\n      specialInstructions = 'Упор на нейрохимические эффекты ароматов, влияние на лимбическую систему, методы снижения стресса.';\n      break;\n\n    case 'сон_и_отдых':\n      requestContext = 'СОН И ВОССТАНОВЛЕНИЕ';\n      searchQueries = [\n        'лаванда мелисса сон бессонница ароматерапия исследования',\n        'эфирные масла мелатонин качество сна циркадные ритмы',\n        'ароматерапия для глубокого сна восстановления научные данные'\n      ];\n      specialInstructions = 'Акцент на влияние на мелатонин, циркадные ритмы, создание ритуалов перед сном.';\n      break;\n\n    case 'мышцы_и_суставы':\n      requestContext = 'МЫШЦЫ, СУСТАВЫ И БОЛЬ';\n      searchQueries = [\n        'эфирные масла мышечная боль воспаление суставы',\n        'винтергрин эвкалипт противовоспалительные свойства масел',\n        'ароматерапия артрит ревматизм мышечные спазмы'\n      ];\n      specialInstructions = 'Фокус на противовоспалительных свойствах, методах массажа, разведении для топического применения.';\n      break;\n\n    case 'кожные_проблемы':\n      requestContext = 'ЗДОРОВЬЕ КОЖИ';\n      searchQueries = [\n        'чайное дерево лаванда кожа акне дерматит исследования',\n        'эфирные масла антибактериальные свойства кожные проблемы',\n        'ароматерапия экзема псориаз воспаления кожи'\n      ];\n      specialInstructions = 'Важность правильного разведения для кожи, тест на аллергию, антибактериальные и заживляющие свойства.';\n      break;\n\n    case 'иммунитет':\n      requestContext = 'ИММУННАЯ СИСТЕМА';\n      searchQueries = [\n        'эфирные масла иммунитет защитные функции организма',\n        'чайное дерево эвкалипт иммуномодулирующие свойства',\n        'ароматерапия профилактика заболеваний укрепление иммунитета'\n      ];\n      specialInstructions = 'Акцент на профилактике, укреплении естественных защитных функций организма.';\n      break;\n\n    default:\n      requestContext = 'ОБЩИЕ МЕДИЦИНСКИЕ РЕКОМЕНДАЦИИ';\n      searchQueries = [\n        'эфирные масла здоровье научные исследования 2024',\n        'ароматерапия холистическое здоровье доказательная медицина'\n      ];\n  }\n}\n\n// 3. ОБЫЧНЫЕ КЛЮЧЕВЫЕ СЛОВА → AI Agent. Fast (БЕЗ Perplexity)\nelse if (Array.isArray(keywords) && keywords.length > 0) {\n  console.log('🏷️ ОБЫЧНЫЕ КЛЮЧЕВЫЕ СЛОВА → AI Agent. Fast');\n  needsPerplexitySearch = false;\n  \n  if (keywords.includes('энергия')) {\n    requestContext = 'ЭНЕРГИЯ И БОДРОСТЬ';\n  } else if (keywords.includes('спокойствие')) {\n    requestContext = 'РАССЛАБЛЕНИЕ И ПОКОЙ';\n  } else if (keywords.includes('простуда')) {\n    requestContext = 'ЗДОРОВЬЕ И ЛЕЧЕНИЕ';\n  } else {\n    requestContext = 'ОБЩИЕ РЕКОМЕНДАЦИИ';\n  }\n}\n\n// 4. ДЕФОЛТ → AI Agent. Fast\nelse {\n  console.log('🔄 ДЕФОЛТ → AI Agent. Fast');\n  needsPerplexitySearch = false;\n  requestContext = 'ОБЩИЕ РЕКОМЕНДАЦИИ';\n}\n\n// Выбираем главный поисковый запрос\nconst mainSearchQuery = searchQueries[0] || 'эфирные масла для здоровья';\n\nconsole.log('🤖 ВЫБРАН АГЕНТ:', needsPerplexitySearch ? 'AI Agent Perplexity)' : 'AI Agent. Fast');\nconsole.log('Request context:', requestContext);\nconsole.log('Search queries prepared:', searchQueries.length);\nconsole.log('Special instructions:', specialInstructions);\n\n// Безопасно формируем строку ключевых слов\nconst keywordsString = Array.isArray(keywords) ? keywords.join(', ') : 'нет';\n\n// Подготавливаем данные для передачи в AI Agent\nreturn [{\n  json: {\n    chatId: userRequest.chatId,\n    requestType: userRequest.requestType,\n    context: requestContext,\n    userQuery: userQuery,\n    keywords: keywords,\n    keywordsString: keywordsString,\n    \n    // 🔥 КЛЮЧЕВОЕ ПОЛЕ ДЛЯ ВЫБОРА АГЕНТА\n    needsPerplexitySearch: needsPerplexitySearch,\n    \n    // Медицинские данные\n    medicalInfo: medicalInfo,\n    specialInstructions: specialInstructions,\n    enhancedPrompt: needsPerplexitySearch ? 'enhanced medical prompt' : 'fast simple prompt',\n    \n    // Данные для веб-поиска\n    mainSearchQuery: mainSearchQuery,\n    allSearchQueries: searchQueries,\n    searchEnabled: needsPerplexitySearch,\n    \n    // Данные о маслах из базы\n    oilsCount: oilsData.length,\n    oilsData: oilsData.slice(0, 20), // Топ-20 для экономии токенов\n    \n    // Для следующего узла\n    isAIRecommendation: true, \n    isMedicalQuery: medicalInfo ? true : false,\n    callbackQueryId: userRequest.callbackQueryId || null,\n    \n    // Отладочная информация\n    debug: {\n      agentType: needsPerplexitySearch ? 'Perplexity' : 'Fast',\n      isCallback: userRequest.isCallbackQuery || false,\n      hasMedicalInfo: medicalInfo ? true : false,\n      keywordsCount: keywords.length\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2288,
+        -80
+      ],
+      "id": "16b184b4-c550-4ec1-9ebb-53d594f52786",
+      "name": "AI Agent код"
+    },
+    {
+      "parameters": {
+        "messages": {
+          "message": [
+            {
+              "content": "={{ $json.mainSearchQuery }}"
+            }
+          ]
+        },
+        "options": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.perplexityTool",
+      "typeVersion": 1,
+      "position": [
+        3152,
+        -464
+      ],
+      "id": "6afdbd35-2914-4fb3-a58e-23498ee388d6",
+      "name": "Perplexity",
+      "credentials": {
+        "perplexityApi": {
+          "id": "W2yAuOlhzNtJI50T",
+          "name": "Perplexity account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "537551b8-ea62-4e2e-92f6-b0c7b37b312a",
+              "leftValue": "={{ $json.requestType }}",
+              "rightValue": "disambiguation",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        -1504
+      ],
+      "id": "2098d5fa-eb93-4353-ade5-cee5eb004e00",
+      "name": "IF Disambiguation"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6611f9f7-fa85-4229-b4d0-f54fad14eb1f",
+              "leftValue": "={{ $json.requestType }}",
+              "rightValue": "oil_comparison",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "1ab7de4e-a161-4430-9c58-bbbe7aa17452",
+              "leftValue": "={{ $json.requestType }}",
+              "rightValue": "disambiguation",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        160
+      ],
+      "id": "216e995b-3dbf-4bd2-b60e-05fb3be72e26",
+      "name": "IF Oil Comparison"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "123",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Обработчик сравнения масел",
+                    "additionalFields": {
+                      "callback_data": "compare_oils"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1264,
+        112
+      ],
+      "id": "c8007ea6-3c03-445e-838b-0b0a7aa23f22",
+      "name": "Oil Comparison Response",
+      "webhookId": "b5f8c588-814e-403f-9b7e-e2818ab4781b",
+      "credentials": {
+        "telegramApi": {
+          "id": "r86pcb9P39ijiBL9",
+          "name": "Эфирные масла "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{(() => {\n  const data = $json;\n  const ambiguousKey = data.ambiguousKey || 'масло';\n  const options = data.options || [];\n  const defaultChoice = data.defaultChoice || options[0];\n  const originalQuery = data.originalQuery || ambiguousKey;\n  \n  let message = `🤔 Нашел несколько вариантов для \"${originalQuery}\":\\n\\n`;\n  \n  message += `🌟 **Самый популярный: ${defaultChoice}**\\n`;\n  message += `(автоматически выберется через 10 секунд)\\n\\n`;\n  \n  message += `🎯 **Все варианты:**\\n`;\n  options.forEach((option, index) => {\n    const isDefault = option === defaultChoice;\n    const emoji = isDefault ? '🌟' : '🌿';\n    message += `${emoji} ${option}\\n`;\n  });\n  \n  message += `\\n💡 **Выбери нужный вариант кнопками ниже**`;\n  \n  return message;\n})()}}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🌟 Мята перечная",
+                    "additionalFields": {
+                      "callback_data": "select_oil:Мята перечная"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🌿 Мята садовая",
+                    "additionalFields": {
+                      "callback_data": "select_oil:Мята садовая"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🏠 Главное меню",
+                    "additionalFields": {
+                      "callback_data": "main_menu"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        848,
+        -2320
+      ],
+      "id": "a2d02fa5-0cd1-472e-8f21-e63679e5a59f",
+      "name": "Disambiguation Mint (для мяты)",
+      "webhookId": "0aafea2e-11c9-4404-9719-bda39489e710",
+      "credentials": {
+        "telegramApi": {
+          "id": "r86pcb9P39ijiBL9",
+          "name": "Эфирные масла "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{(() => {\n  const data = $json;\n  const ambiguousKey = data.ambiguousKey || 'масло';\n  const options = data.options || [];\n  const defaultChoice = data.defaultChoice || options[0];\n  const originalQuery = data.originalQuery || ambiguousKey;\n  \n  let message = `🤔 Нашел несколько вариантов для \"${originalQuery}\":\\n\\n`;\n  \n  message += `🌟 **Самый популярный: ${defaultChoice}**\\n`;\n  message += `(автоматически выберется через 10 секунд)\\n\\n`;\n  \n  message += `🎯 **Все варианты:**\\n`;\n  options.forEach((option, index) => {\n    const isDefault = option === defaultChoice;\n    const emoji = isDefault ? '🌟' : '🌿';\n    message += `${emoji} ${option}\\n`;\n  });\n  \n  message += `\\n💡 **Выбери нужный вариант кнопками ниже**`;\n  \n  return message;\n})()}}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🌟 Чёрный перец",
+                    "additionalFields": {
+                      "callback_data": "select_oil:Чёрный перец"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🌿 Розовый перец",
+                    "additionalFields": {
+                      "callback_data": "select_oil:Розовый перец"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🏠 Главное меню",
+                    "additionalFields": {
+                      "callback_data": "main_menu"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        848,
+        -2128
+      ],
+      "id": "bebf0d4d-f76c-4952-bae1-4002173f97a7",
+      "name": "Disambiguation Pepper (для перца)",
+      "webhookId": "0aafea2e-11c9-4404-9719-bda39489e710",
+      "credentials": {
+        "telegramApi": {
+          "id": "r86pcb9P39ijiBL9",
+          "name": "Эфирные масла "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{(() => {\n  const data = $json;\n  const ambiguousKey = data.ambiguousKey || 'масло';\n  const options = data.options || [];\n  const defaultChoice = data.defaultChoice || options[0];\n  const originalQuery = data.originalQuery || ambiguousKey;\n  \n  let message = `🤔 Нашел несколько вариантов для \"${originalQuery}\":\\n\\n`;\n  \n  message += `🌟 **Самый популярный: ${defaultChoice}**\\n`;\n  message += `(автоматически выберется через 10 секунд)\\n\\n`;\n  \n  message += `🎯 **Все варианты:**\\n`;\n  options.forEach((option, index) => {\n    const isDefault = option === defaultChoice;\n    const emoji = isDefault ? '🌟' : '🌿';\n    message += `${emoji} ${option}\\n`;\n  });\n  \n  message += `\\n💡 **Выбери нужный вариант кнопками ниже**`;\n  \n  return message;\n})()}}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🌟 Шалфей мускатный",
+                    "additionalFields": {
+                      "callback_data": "select_oil:Шалфей мускатный"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🌿 Шалфей испанский",
+                    "additionalFields": {
+                      "callback_data": "select_oil:Шалфей испанский"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🏠 Главное меню",
+                    "additionalFields": {
+                      "callback_data": "main_menu"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        848,
+        -1936
+      ],
+      "id": "b5f4d1e5-3c8b-4c85-aa24-1d65085ddd96",
+      "name": "Disambiguation Sage (для шалфея)",
+      "webhookId": "0aafea2e-11c9-4404-9719-bda39489e710",
+      "credentials": {
+        "telegramApi": {
+          "id": "r86pcb9P39ijiBL9",
+          "name": "Эфирные масла "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{(() => {\n  const data = $json;\n  const ambiguousKey = data.ambiguousKey || 'масло';\n  const options = data.options || [];\n  const defaultChoice = data.defaultChoice || options[0];\n  const originalQuery = data.originalQuery || ambiguousKey;\n  \n  let message = `🤔 Нашел несколько вариантов для \"${originalQuery}\":\\n\\n`;\n  \n  message += `🌟 **Самый популярный: ${defaultChoice}**\\n`;\n  message += `(автоматически выберется через 10 секунд)\\n\\n`;\n  \n  message += `🎯 **Все варианты:**\\n`;\n  options.forEach((option, index) => {\n    const isDefault = option === defaultChoice;\n    const emoji = isDefault ? '🌟' : '🌿';\n    message += `${emoji} ${option}\\n`;\n  });\n  \n  message += `\\n💡 **Выбери нужный вариант кнопками ниже**`;\n  \n  return message;\n})()}}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🌟 Эвкалипт",
+                    "additionalFields": {
+                      "callback_data": "select_oil:Эвкалипт"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🌿 Лимонный эвкалипт",
+                    "additionalFields": {
+                      "callback_data": "select_oil:Лимонный эвкалипт"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🏠 Главное меню",
+                    "additionalFields": {
+                      "callback_data": "main_menu"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        848,
+        -1760
+      ],
+      "id": "69654d22-ab49-40db-9bed-86d0e0c6b3df",
+      "name": "Disambiguation Eucalyptus (для эвкалипта)",
+      "webhookId": "0aafea2e-11c9-4404-9719-bda39489e710",
+      "credentials": {
+        "telegramApi": {
+          "id": "r86pcb9P39ijiBL9",
+          "name": "Эфирные масла "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst ambiguousKey = data.ambiguousKey;\nconst options = data.options || [];\n\nconsole.log('🔄 Disambiguation Router started');\nconsole.log('Ambiguous key:', ambiguousKey);\nconsole.log('Options:', options);\n\n// Определяем какой Telegram узел вызвать\nlet targetNode = '';\n\nswitch(ambiguousKey) {\n  case 'мята':\n    targetNode = 'mint';\n    break;\n  case 'перец':\n    targetNode = 'pepper';\n    break;\n  case 'шалфей':\n    targetNode = 'sage';\n    break;\n  case 'эвкалипт':\n    targetNode = 'eucalyptus';\n    break;\n  case 'пихта':\n    targetNode = 'pine';\n    break;\n  case 'мандарин':\n    targetNode = 'mandarin';\n    break;\n  case 'базилик':\n    targetNode = 'basil';\n    break;\n  case 'ситрус':\n    targetNode = 'citrus';\n    break;\n  case 'холидей':\n    targetNode = 'holiday';\n    break;\n  case 'чайное дерево':\n    targetNode = 'tea_tree';\n    break;\n  // 🆕 НОВЫЕ НЕОДНОЗНАЧНОСТИ\n  case 'дерево':\n    targetNode = 'tree';\n    break;\n  case 'ромашка':\n    targetNode = 'chamomile';\n    break;\n  case 'ель':\n    targetNode = 'spruce';\n    break;\n  case 'лимон':\n    targetNode = 'lemon';\n    break;\n  case 'апельсин':\n    targetNode = 'orange';\n    break;\n  default:\n    targetNode = 'universal'; // универсальный обработчик\n}\n\nconsole.log('🎯 Target node determined:', targetNode, 'for key:', ambiguousKey);\n\n// Формируем динамические кнопки в зависимости от количества вариантов\nconst buttons = [];\n\n// Добавляем кнопки для каждого варианта\noptions.forEach((option, index) => {\n  const isDefault = option === data.defaultChoice;\n  const emoji = isDefault ? '🌟' : '🌿';\n  \n  buttons.push({\n    row: {\n      buttons: [{\n        text: `${emoji} ${option}`,\n        additionalFields: {\n          callback_data: `select_oil:${option}`\n        }\n      }]\n    }\n  });\n});\n\n// Добавляем кнопку \"Главное меню\"\nbuttons.push({\n  row: {\n    buttons: [{\n      text: \"🏠 Главное меню\",\n      additionalFields: {\n        callback_data: \"main_menu\"\n      }\n    }]\n  }\n});\n\n// Формируем текст сообщения\nlet messageText = `🤔 Нашел несколько вариантов для \"${data.originalQuery}\":\\n\\n`;\nmessageText += `🌟 **Самый популярный: ${data.defaultChoice}**\\n`;\nmessageText += `(автоматически выберется через 10 секунд)\\n\\n`;\nmessageText += `🎯 **Все варианты:**\\n`;\n\noptions.forEach((option, index) => {\n  const isDefault = option === data.defaultChoice;\n  const emoji = isDefault ? '🌟' : '🌿';\n  messageText += `${emoji} ${option}\\n`;\n});\n\nmessageText += `\\n💡 **Выбери нужный вариант кнопками ниже**`;\n\n// Возвращаем данные с указанием целевого узла\nreturn [{\n  json: {\n    ...data,\n    targetNode: targetNode,\n    \n    // Данные для универсального телеграм узла\n    messageText: messageText,\n    dynamicButtons: buttons,\n    \n    // Отладочная информация\n    debug: {\n      ambiguousKey: ambiguousKey,\n      optionsCount: options.length,\n      targetNode: targetNode,\n      hasValidOptions: options.length >= 2,\n      allOptions: options\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        -1696
+      ],
+      "id": "0222bac6-9e50-4848-a7b4-43e423094013",
+      "name": "Disambiguation Router"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c67a1aa1-6801-4680-b4ec-4d7ba0acd899",
+              "leftValue": "={{ $json.targetNode }}",
+              "rightValue": "mint",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        528,
+        -2240
+      ],
+      "id": "8d9d4413-4ef2-4e00-ad98-13b1830939b7",
+      "name": "IF Mint"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6e5f9395-89b4-4f7c-8c10-996771c00253",
+              "leftValue": "={{ $json.targetNode }}",
+              "rightValue": "pepper",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        528,
+        -2064
+      ],
+      "id": "2e7cf268-7b24-40e0-8cbf-0427947c28ca",
+      "name": "IF Pepper"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f0ef6f06-5aeb-4b6b-aa44-30203ef90326",
+              "leftValue": "={{ $json.targetNode }}",
+              "rightValue": "sage",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        528,
+        -1888
+      ],
+      "id": "fb9b0160-3e7f-4fb9-bd83-abc025ae233c",
+      "name": "IF Sage"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ed05b5ad-6175-4dd1-9bbc-9c0e4c389f47",
+              "leftValue": "={{ $json.targetNode }}",
+              "rightValue": "eucalyptus",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        528,
+        -1744
+      ],
+      "id": "8ca2a6cf-b720-4189-aae5-b383519ac33e",
+      "name": "IF Eucalyptus"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ed05b5ad-6175-4dd1-9bbc-9c0e4c389f47",
+              "leftValue": "={{ $json.targetNode }}",
+              "rightValue": "pine",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        528,
+        -1584
+      ],
+      "id": "7d0c1a9e-8b0d-4835-81b2-b650a9831782",
+      "name": "IF Pixta"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{(() => {\n  const data = $json;\n  const ambiguousKey = data.ambiguousKey || 'масло';\n  const options = data.options || [];\n  const defaultChoice = data.defaultChoice || options[0];\n  const originalQuery = data.originalQuery || ambiguousKey;\n  \n  let message = `🤔 Нашел несколько вариантов для \"${originalQuery}\":\\n\\n`;\n  \n  message += `🌟 **Самый популярный: ${defaultChoice}**\\n`;\n  message += `(автоматически выберется через 10 секунд)\\n\\n`;\n  \n  message += `🎯 **Все варианты:**\\n`;\n  options.forEach((option, index) => {\n    const isDefault = option === defaultChoice;\n    const emoji = isDefault ? '🌟' : '🌿';\n    message += `${emoji} ${option}\\n`;\n  });\n  \n  message += `\\n💡 **Выбери нужный вариант кнопками ниже**`;\n  \n  return message;\n})()}}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🌟 Пихта сибирская",
+                    "additionalFields": {
+                      "callback_data": "select_oil:Пихта сибирская"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🌿 Пихта Дугласа",
+                    "additionalFields": {
+                      "callback_data": "select_oil:Пихта Дугласа"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🏠 Главное меню",
+                    "additionalFields": {
+                      "callback_data": "main_menu"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        848,
+        -1584
+      ],
+      "id": "f0d85865-a7e6-47a1-b032-32c817eb7e17",
+      "name": "Disambiguation Pixta",
+      "webhookId": "0aafea2e-11c9-4404-9719-bda39489e710",
+      "credentials": {
+        "telegramApi": {
+          "id": "r86pcb9P39ijiBL9",
+          "name": "Эфирные масла "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ed05b5ad-6175-4dd1-9bbc-9c0e4c389f47",
+              "leftValue": "={{ $json.targetNode }}",
+              "rightValue": "mandarin",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        544,
+        -1408
+      ],
+      "id": "e23f7a46-25d5-494a-aa0c-bd477110cb10",
+      "name": "IF мандарин"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{(() => {\n  const data = $json;\n  const ambiguousKey = data.ambiguousKey || 'масло';\n  const options = data.options || [];\n  const defaultChoice = data.defaultChoice || options[0];\n  const originalQuery = data.originalQuery || ambiguousKey;\n  \n  let message = `🤔 Нашел несколько вариантов для \"${originalQuery}\":\\n\\n`;\n  \n  message += `🌟 **Самый популярный: ${defaultChoice}**\\n`;\n  message += `(автоматически выберется через 10 секунд)\\n\\n`;\n  \n  message += `🎯 **Все варианты:**\\n`;\n  options.forEach((option, index) => {\n    const isDefault = option === defaultChoice;\n    const emoji = isDefault ? '🌟' : '🌿';\n    message += `${emoji} ${option}\\n`;\n  });\n  \n  message += `\\n💡 **Выбери нужный вариант кнопками ниже**`;\n  \n  return message;\n})()}}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🌟 Зелёный мандарин",
+                    "additionalFields": {
+                      "callback_data": "select_oil:Зелёный мандарин"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🌿 Мандарин",
+                    "additionalFields": {
+                      "callback_data": "select_oil:Мандарин"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🏠 Главное меню",
+                    "additionalFields": {
+                      "callback_data": "main_menu"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        848,
+        -1408
+      ],
+      "id": "d3925a5a-52db-4072-a8d2-b45b61c56215",
+      "name": "Disambiguation мандарин",
+      "webhookId": "0aafea2e-11c9-4404-9719-bda39489e710",
+      "credentials": {
+        "telegramApi": {
+          "id": "r86pcb9P39ijiBL9",
+          "name": "Эфирные масла "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ed05b5ad-6175-4dd1-9bbc-9c0e4c389f47",
+              "leftValue": "={{ $json.targetNode }}",
+              "rightValue": "basil",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        544,
+        -1216
+      ],
+      "id": "aea660a5-93ce-4153-a345-3a952c63dd53",
+      "name": "IF базилик"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ed05b5ad-6175-4dd1-9bbc-9c0e4c389f47",
+              "leftValue": "={{ $json.targetNode }}",
+              "rightValue": "citrus",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        544,
+        -1056
+      ],
+      "id": "16105eec-4571-4728-b7c6-bdf602e90395",
+      "name": "IF Ситрус"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{(() => {\n  const data = $json;\n  const ambiguousKey = data.ambiguousKey || 'масло';\n  const options = data.options || [];\n  const defaultChoice = data.defaultChoice || options[0];\n  const originalQuery = data.originalQuery || ambiguousKey;\n  \n  let message = `🤔 Нашел несколько вариантов для \"${originalQuery}\":\\n\\n`;\n  \n  message += `🌟 **Самый популярный: ${defaultChoice}**\\n`;\n  message += `(автоматически выберется через 10 секунд)\\n\\n`;\n  \n  message += `🎯 **Все варианты:**\\n`;\n  options.forEach((option, index) => {\n    const isDefault = option === defaultChoice;\n    const emoji = isDefault ? '🌟' : '🌿';\n    message += `${emoji} ${option}\\n`;\n  });\n  \n  message += `\\n💡 **Выбери нужный вариант кнопками ниже**`;\n  \n  return message;\n})()}}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🌟 Ситрус Блисс",
+                    "additionalFields": {
+                      "callback_data": "select_oil:Ситрус Блисс"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🌿 Ситрус Блом",
+                    "additionalFields": {
+                      "callback_data": "select_oil:Ситрус Блом"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🏠 Главное меню",
+                    "additionalFields": {
+                      "callback_data": "main_menu"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        848,
+        -1056
+      ],
+      "id": "a1f31dc3-7d34-451f-8f99-e77003803571",
+      "name": "Disambiguation Ситрус",
+      "webhookId": "0aafea2e-11c9-4404-9719-bda39489e710",
+      "credentials": {
+        "telegramApi": {
+          "id": "r86pcb9P39ijiBL9",
+          "name": "Эфирные масла "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ed05b5ad-6175-4dd1-9bbc-9c0e4c389f47",
+              "leftValue": "={{ $json.targetNode }}",
+              "rightValue": "holiday",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        544,
+        -880
+      ],
+      "id": "902d84fb-5f07-44ff-a743-da0a576b0ef5",
+      "name": "IF Холидей"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{(() => {\n  const data = $json;\n  const ambiguousKey = data.ambiguousKey || 'масло';\n  const options = data.options || [];\n  const defaultChoice = data.defaultChoice || options[0];\n  const originalQuery = data.originalQuery || ambiguousKey;\n  \n  let message = `🤔 Нашел несколько вариантов для \"${originalQuery}\":\\n\\n`;\n  \n  message += `🌟 **Самый популярный: ${defaultChoice}**\\n`;\n  message += `(автоматически выберется через 10 секунд)\\n\\n`;\n  \n  message += `🎯 **Все варианты:**\\n`;\n  options.forEach((option, index) => {\n    const isDefault = option === defaultChoice;\n    const emoji = isDefault ? '🌟' : '🌿';\n    message += `${emoji} ${option}\\n`;\n  });\n  \n  message += `\\n💡 **Выбери нужный вариант кнопками ниже**`;\n  \n  return message;\n})()}}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🌟 Холидей Пис",
+                    "additionalFields": {
+                      "callback_data": "select_oil:Холидей Пис"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🌿 Холидей Джой",
+                    "additionalFields": {
+                      "callback_data": "select_oil:Холидей Джой"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🏠 Главное меню",
+                    "additionalFields": {
+                      "callback_data": "main_menu"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        848,
+        -896
+      ],
+      "id": "ff7fb0bc-1359-4fee-86da-0ffafb137533",
+      "name": "Disambiguation Холидей",
+      "webhookId": "0aafea2e-11c9-4404-9719-bda39489e710",
+      "credentials": {
+        "telegramApi": {
+          "id": "r86pcb9P39ijiBL9",
+          "name": "Эфирные масла "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ed05b5ad-6175-4dd1-9bbc-9c0e4c389f47",
+              "leftValue": "={{ $json.targetNode }}",
+              "rightValue": "tree",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        544,
+        -704
+      ],
+      "id": "9d3e1d03-dd30-4cd2-9610-90a9da6ff7b4",
+      "name": "IF Дерево"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{(() => {\n  const data = $json;\n  const ambiguousKey = data.ambiguousKey || 'масло';\n  const options = data.options || [];\n  const defaultChoice = data.defaultChoice || options[0];\n  const originalQuery = data.originalQuery || ambiguousKey;\n  \n  let message = `🤔 Нашел несколько вариантов для \"${originalQuery}\":\\n\\n`;\n  \n  message += `🌟 **Самый популярный: ${defaultChoice}**\\n`;\n  message += `(автоматически выберется через 10 секунд)\\n\\n`;\n  \n  message += `🎯 **Все варианты:**\\n`;\n  options.forEach((option, index) => {\n    const isDefault = option === defaultChoice;\n    const emoji = isDefault ? '🌟' : '🌿';\n    message += `${emoji} ${option}\\n`;\n  });\n  \n  message += `\\n💡 **Выбери нужный вариант кнопками ниже**`;\n  \n  return message;\n})()}}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🌟 Чайное дерево",
+                    "additionalFields": {
+                      "callback_data": "select_oil:Чайное дерево"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🌿 Гваяковое дерево",
+                    "additionalFields": {
+                      "callback_data": "select_oil:Гваяковое дерево"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🏠 Главное меню",
+                    "additionalFields": {
+                      "callback_data": "main_menu"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        848,
+        -720
+      ],
+      "id": "edcedcf0-84fc-4786-abcf-771c2ead2333",
+      "name": "Disambiguation Дерево",
+      "webhookId": "0aafea2e-11c9-4404-9719-bda39489e710",
+      "credentials": {
+        "telegramApi": {
+          "id": "r86pcb9P39ijiBL9",
+          "name": "Эфирные масла "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{(() => {\n  const data = $json;\n  const ambiguousKey = data.ambiguousKey || 'масло';\n  const options = data.options || [];\n  const defaultChoice = data.defaultChoice || options[0];\n  const originalQuery = data.originalQuery || ambiguousKey;\n  \n  let message = `🤔 Нашел несколько вариантов для \"${originalQuery}\":\\n\\n`;\n  \n  message += `🌟 **Самый популярный: ${defaultChoice}**\\n`;\n  message += `(автоматически выберется через 10 секунд)\\n\\n`;\n  \n  message += `🎯 **Все варианты:**\\n`;\n  options.forEach((option, index) => {\n    const isDefault = option === defaultChoice;\n    const emoji = isDefault ? '🌟' : '🌿';\n    message += `${emoji} ${option}\\n`;\n  });\n  \n  message += `\\n💡 **Выбери нужный вариант кнопками ниже**`;\n  \n  return message;\n})()}}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🌟 Базилик",
+                    "additionalFields": {
+                      "callback_data": "select_oil:Базилик"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🌿Тулси (священный базилик)",
+                    "additionalFields": {
+                      "callback_data": "select_oil:Тулси (священный базилик)"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🏠 Главное меню",
+                    "additionalFields": {
+                      "callback_data": "main_menu"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        848,
+        -1216
+      ],
+      "id": "cd290ac0-e906-46e9-bbbe-514aa1d459d2",
+      "name": "Disambiguation basil",
+      "webhookId": "0aafea2e-11c9-4404-9719-bda39489e710",
+      "credentials": {
+        "telegramApi": {
+          "id": "r86pcb9P39ijiBL9",
+          "name": "Эфирные масла "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ceff23dc-7871-48b2-aa30-91d62aa0597e",
+              "leftValue": "={{ $json.needsPerplexitySearch }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2640,
+        -416
+      ],
+      "id": "499d403a-fdf8-4447-ba7a-55f4f6301da0",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Smart Router').first().json.chatId }}",
+        "text": "={{ $json.output }}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🏠 Главное меню",
+                    "additionalFields": {
+                      "callback_data": "main_menu"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3328,
+        -688
+      ],
+      "id": "4578623f-a255-47be-bd29-86694f503fe8",
+      "name": "Telegram",
+      "webhookId": "8a3e6385-71fd-46b3-9d9f-48620a66d27c",
+      "credentials": {
+        "telegramApi": {
+          "id": "r86pcb9P39ijiBL9",
+          "name": "Эфирные масла "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=const promptWithSearch = `You are a professional aromatherapist providing evidence-based recommendations.\n\n🇷🇺 CRITICAL: You MUST respond in RUSSIAN language only, regardless of input language!\n\n📋 USER REQUEST: {{ $json.userQuery }}\n🎯 MEDICAL CONTEXT: {{ $json.context }}\n🔍 MEDICAL CATEGORY: {{ $json.medicalInfo.category || 'general' }}\n🩺 SYMPTOM: {{ $json.medicalInfo.symptom || 'not specified' }}\n\n🔍 SEARCH TASK: Use Perplexity to find current practical information about \"{{ $json.needsPerplexitySearch }}\"\n\nFocus your search on:\n- Current dosage recommendations for essential oils\n- Specific application methods (massage, inhalation, topical)\n- Safety precautions and contraindications\n- Recent aromatherapy practices and techniques\n- Practical usage guidelines\n\n🚨 RESPONSE REQUIREMENTS:\n- Combine Perplexity search results with database information\n- Provide SPECIFIC dosages in drops (капли)\n- Give EXACT application instructions (step-by-step)\n- Include ready-to-use recipes with precise proportions\n- Add safety warnings and contraindications\n\n🌿 AVAILABLE OILS FROM DATABASE:\n{{ $json.oilsCount }} масел доступно в базе данных.\n\n📋 ЗАПРОС ПОЛЬЗОВАТЕЛЯ: {{ $json.userQuery }}\n🎯 КОНТЕКСТ: {{ $json.context }}\n🔍 КЛЮЧЕВЫЕ СЛОВА: {{ $json.keywordsString }}\n\n{{ $json.isMedicalQuery ? `\n🔬 МЕДИЦИНСКИЙ КОНТЕКСТ:\n- Категория: ${ $json.medicalInfo?.category || 'не определена' }\n- Симптом/запрос: ${ $json.medicalInfo?.symptom || 'общий запрос' }\n- Тип запроса: ${ $json.medicalInfo?.type || 'симптом' }\n\n⚠️ СПЕЦИАЛЬНЫЕ УКАЗАНИЯ:\n${ $json.specialInstructions || 'Стандартные рекомендации по безопасности' }\n` : '' }}\n\nИспользуй Perplexity для поиска актуальных научных данных об эфирных маслах для лечения указанного симптома.\n\nДай 3-4 конкретные рекомендации с современными исследованиями.\n🇷🇺 STRICT RUSSIAN FORMAT:\n\n🎯 **Для {{ $json.context.toLowerCase() }}** рекомендую:\n\n🌿 **[НАЗВАНИЕ МАСЛА ИЗ БАЗЫ]** \n💡 **КАК ПРИМЕНЯТЬ:**\n   • **Массаж:** [точная дозировка в каплях] + [базовое масло], [как делать массаж]\n   • **Ингаляция:** [количество капель], [способ ингаляции], [продолжительность]\n   • **Компресс:** [дозировка], [температура], [время применения]\n   • **Частота:** [сколько раз в день, в какое время]\n\n🌿 **[НАЗВАНИЕ МАСЛА 2]** \n💡 **КАК ПРИМЕНЯТЬ:**\n   • [конкретные способы с точными дозировками]\n\n🌿 **[НАЗВАНИЕ МАСЛА 3]** \n💡 **КАК ПРИМЕНЯТЬ:**\n   • [дополнительные варианты применения]\n\n🧴 **ГОТОВЫЕ РЕЦЕПТЫ СМЕСЕЙ:**\n\n**🥄 Рецепт 1 - Для немедленного облегчения:**\n- [Масло 1]: X капель\n- [Масло 2]: Y капель  \n- Базовое масло (кокосовое/жожоба): Z мл\n- **Применение:** [детальная пошаговая инструкция с временем]\n\n**🛡️ Рецепт 2 - Для профилактики:**\n- [состав с точными пропорциями]\n- **Применение:** [как и когда использовать]\n\n⏰ **ПОДРОБНЫЙ ПЛАН ПРИМЕНЕНИЯ:**\n🌅 **При острых симптомах:** [что делать первым делом, точные действия]\n🌆 **Для ежедневной поддержки:** [профилактические меры, дозировки]\n📅 **Курс лечения:** [продолжительность, частота, как оценивать эффект]\n🔄 **Повторное применение:** [когда можно повторить, интервалы]\n\n⚠️ **БЕЗОПАСНОСТЬ И ПРОТИВОПОКАЗАНИЯ:**\n[Для каждого рекомендованного масла указать:]\n- Кому НЕ рекомендуется\n- Возможные побочные эффекты  \n- Тест на аллергию перед применением\n- Взаимодействие с лекарствами (если известно)\n\n🏥 **МЕДИЦИНСКАЯ ВАЖНОСТЬ:**\nПри серьезных, продолжающихся или ухудшающихся симптомах ОБЯЗАТЕЛЬНО консультируйтесь с врачом. Эфирные масла дополняют традиционное лечение, но НЕ заменяют его.\n\n🔍 **ИСТОЧНИКИ:** [Кратко упомянуть откуда взята актуальная информация]\n\n❌ ЗАПРЕЩЕНО: Общие фразы, неточные дозировки, советы без конкретики\n🇷🇺 ОБЯЗАТЕЛЬНО: Ответ только на русском языке!`;",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        2960,
+        -688
+      ],
+      "id": "db9d9fbf-233e-4a7f-9cc5-6d77c0cc2914",
+      "name": "AI Agent Perplexity)"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Ты опытный ароматерапевт, предоставляющий быстрые практические советы.\n\n🇷🇺 КРИТИЧЕСКИ ВАЖНО: Отвечай ТОЛЬКО на русском языке!\n\n📋 ЗАПРОС ПОЛЬЗОВАТЕЛЯ: {{ $json.userQuery || $json.originalText || \"общие рекомендации\" }}\n🎯 КОНТЕКСТ: {{ $json.context || \"здоровье и благополучие\" }}\n🔍 КЛЮЧЕВЫЕ СЛОВА: {{ $json.keywords ? $json.keywords.join(\", \") : \"не указаны\" }}\n\n⚡ БЫСТРЫЙ РЕЖИМ: Используй ТОЛЬКО информацию из базы данных ниже.\nНЕ используй внешний поиск - дай быстрые практические рекомендации на основе доступных данных.\n\n🎯 ЦЕЛИ:\n- Дать немедленную практическую помощь\n- Указать конкретные дозировки и способы применения\n- Сосредоточиться на популярных, хорошо известных эфирных маслах\n- Быть кратким, но полным\n\n📚 ДОСТУПНЫЕ МАСЛА ИЗ БАЗЫ ДАННЫХ:\n{{ $json.oilsData ? $json.oilsData.slice(0, 12).map(oil => `- **${oil.json.oil_name}**: ${oil.json.applications || 'информация недоступна'}`).join('\\n') : 'Данные о маслах недоступны' }}\n\n🚨 ТРЕБОВАНИЯ К ОТВЕТУ:\n- Используй конкретные масла из базы выше\n- Указывай точные дозировки в каплях\n- Давай четкие пошаговые инструкции\n- Включай готовые рецепты\n- Делай ответ практичным и применимым\n\n🇷🇺 ФОРМАТ БЫСТРОГО РУССКОГО ОТВЕТА:\n\n🎯 **Для {{ $json.context ? $json.context.toLowerCase() : \"вашего запроса\" }}** быстро рекомендую:\n\n🌿 **[НАЗВАНИЕ МАСЛА ИЗ БАЗЫ]** \n💡 **ПРИМЕНЕНИЕ:**\n   • **Основной способ:** [дозировка в каплях] + [базовое масло], [как применять]\n   • **Альтернатива:** [другой способ с дозировкой]\n   • **Частота:** [сколько раз в день]\n\n🌿 **[НАЗВАНИЕ МАСЛА 2]** \n💡 **ПРИМЕНЕНИЕ:**\n   • [конкретные инструкции с дозировками]\n\n🧴 **БЫСТРЫЕ РЕЦЕПТЫ:**\n\n**⚡ Для немедленного использования:**\n- [Масло 1]: X капель\n- [Масло 2]: Y капель\n- Базовое масло: Z мл\n- **Как применять:** [простые шаги]\n\n**🔄 Для регулярного использования:**\n- [простой рецепт для ежедневного применения]\n\n⏰ **БЫСТРЫЙ ПЛАН:**\n🌅 **Сейчас:** [что сделать немедленно]\n🌆 **Ежедневно:** [простая рутина]\n📅 **Результат ожидать:** [через сколько времени]\n\n⚠️ **ОСНОВНЫЕ МЕРЫ БЕЗОПАСНОСТИ:**\n- Всегда разбавлять базовым маслом\n- Тест на чувствительность на небольшом участке кожи\n- Не применять на слизистых и вокруг глаз\n- При беременности и детям до 6 лет - с осторожностью\n\n💡 **ДОПОЛНИТЕЛЬНО:**\n[Один полезный совет или альтернативный способ применения]\n\n❌ БЕЗ: сложных объяснений, длинных списков, научных терминов\n⚡ ГЛАВНОЕ: быстрые, конкретные, применимые советы\n🇷🇺 ЯЗЫК: только русский!",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        2960,
+        -208
+      ],
+      "id": "c402f8e2-bce8-4a1c-86c6-e4845bd1b226",
+      "name": "AI Agent. Fast"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2960,
+        -464
+      ],
+      "id": "0d9626f3-97e3-485a-88a8-ab14f03acbeb",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "pLvgZqZjmESpZh3A",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 🛡️ ОБНОВЛЕННАЯ СИСТЕМА БЕЗОПАСНОСТИ для новой структуры БД\nconst input = $input.first();\nconst rawText = (input?.json?.message?.text || '').trim();\nconst chatId = input?.json?.message?.chat?.id || input?.json?.callback_query?.message?.chat?.id;\n// 🔄 ПРОВЕРКА: нужна ли админская обработка?\nconst requestType = input?.json?.requestType;\nconst isAdminCommand = rawText.startsWith('/') && (\n  rawText.includes('admin') || \n  rawText.includes('stats') || \n  rawText.includes('broadcast') ||\n  rawText.includes('users') ||\n  rawText.includes('music') ||\n  rawText.includes('export') ||\n  rawText.includes('dashboard')\n);\n\n// 🚪 ПРОПУСК для обычных пользователей\nif (!isAdminCommand && requestType !== 'admin_panel' && !rawText.startsWith('callback:admin_')) {\n  console.log('👤 Non-admin request detected, bypassing security:', requestType);\n  \n  // Просто передаем данные дальше без изменений\n  return [{\n    json: {\n      ...input.json,\n      bypassedSecurity: true,\n      securityNote: 'Passed through admin security for regular user request'\n    }\n  }];\n}\n\nconsole.log('🛡️ Admin command detected, proceeding with security check');\n\nconsole.log('🔐 Enhanced Security check for chatId:', chatId, 'command:', rawText);\n\n// 🔥 АДМИН ИЗ admin_settings ТАБЛИЦЫ\n// В реальности будем получать из Supabase, но пока захардкодим\nconst ADMIN_CHAT_ID = 802895688; // Ваш chat_id из БД\n\n// 🛡️ УРОВНИ ДОСТУПА (можно расширить позже)\nconst ADMIN_PERMISSIONS = [\n  'view_stats', 'manage_users', 'broadcast', 'export_data', \n  'music_management', 'notification_settings', 'system_settings'\n];\n\n// 🔐 ФУНКЦИЯ ПРОВЕРКИ АДМИНСКИХ ПРАВ\nfunction checkAdminAccess(chatId, requiredPermission = null) {\n  // Проверяем, является ли пользователь админом\n  if (chatId !== ADMIN_CHAT_ID) {\n    console.log('❌ Access denied: not an admin');\n    return {\n      isAdmin: false,\n      hasPermission: false,\n      reason: 'not_admin'\n    };\n  }\n\n  // Если не требуется конкретное право - админ прошел базовую проверку\n  if (!requiredPermission) {\n    return {\n      isAdmin: true,\n      hasPermission: true,\n      permissions: ADMIN_PERMISSIONS\n    };\n  }\n\n  // Проверяем конкретное право\n  const hasPermission = ADMIN_PERMISSIONS.includes(requiredPermission);\n  \n  console.log(`🔍 Permission check: ${chatId} -> ${requiredPermission}: ${hasPermission}`);\n  \n  return {\n    isAdmin: true,\n    hasPermission: hasPermission,\n    permissions: ADMIN_PERMISSIONS,\n    reason: hasPermission ? 'allowed' : 'insufficient_permissions'\n  };\n}\n\n// 🚨 ФУНКЦИЯ ЛОГИРОВАНИЯ (будем сохранять в user_interactions)\nfunction logAdminAction(chatId, action, details = {}) {\n  const logEntry = {\n    chat_id: chatId,\n    interaction_type: 'admin_action',\n    interaction_data: {\n      action: action,\n      details: details,\n      timestamp: new Date().toISOString()\n    },\n    created_at: new Date().toISOString()\n  };\n  \n  console.log('📝 Admin action logged:', JSON.stringify(logEntry));\n  return logEntry;\n}\n\n// 🔍 РАСШИРЕННЫЙ АНАЛИЗ АДМИНСКИХ КОМАНД\nfunction parseAdminCommand(text) {\n  const normalized = text.toLowerCase().trim();\n  \n  const adminCommands = {\n    // === ОСНОВНЫЕ КОМАНДЫ ===\n    '/admin': { action: 'show_panel', permission: null },\n    '/stats': { action: 'show_stats', permission: 'view_stats' },\n    '/dashboard': { action: 'show_dashboard', permission: 'view_stats' },\n    \n    // === УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ ===\n    '/users': { action: 'list_users', permission: 'manage_users' },\n    '/user_stats': { action: 'user_detailed_stats', permission: 'manage_users' },\n    '/active_users': { action: 'list_active_users', permission: 'manage_users' },\n    '/user_info': { action: 'user_details', permission: 'manage_users' },\n    \n    // === РАССЫЛКИ И УВЕДОМЛЕНИЯ ===\n    '/broadcast': { action: 'create_broadcast', permission: 'broadcast' },\n    '/send_message': { action: 'send_broadcast', permission: 'broadcast' },\n    '/schedule_notification': { action: 'schedule_notification', permission: 'notification_settings' },\n    '/notification_stats': { action: 'notification_stats', permission: 'notification_settings' },\n    \n    // === МУЗЫКАЛЬНАЯ БИБЛИОТЕКА ===\n    '/music': { action: 'music_library', permission: 'music_management' },\n    '/add_music': { action: 'add_music', permission: 'music_management' },\n    '/music_stats': { action: 'music_statistics', permission: 'music_management' },\n    \n    // === РЕКОМЕНДАЦИИ ===\n    '/recommendations': { action: 'recommendation_stats', permission: 'view_stats' },\n    '/daily_recs': { action: 'daily_recommendations', permission: 'view_stats' },\n    '/feedback': { action: 'user_feedback', permission: 'view_stats' },\n    \n    // === ЭКСПОРТ ДАННЫХ ===\n    '/export_users': { action: 'export_users', permission: 'export_data' },\n    '/export_interactions': { action: 'export_interactions', permission: 'export_data' },\n    '/export_music': { action: 'export_music', permission: 'export_data' },\n    \n    // === СИСТЕМНЫЕ НАСТРОЙКИ ===\n    '/bot_settings': { action: 'bot_settings', permission: 'system_settings' },\n    '/maintenance': { action: 'maintenance_mode', permission: 'system_settings' },\n    '/system_status': { action: 'system_status', permission: 'system_settings' }\n  };\n  \n  // Проверяем точное совпадение команды\n  if (adminCommands[normalized]) {\n    return adminCommands[normalized];\n  }\n  \n  // Проверяем команды с параметрами\n  for (let cmd in adminCommands) {\n    if (normalized.startsWith(cmd + ' ')) {\n      const params = normalized.substring(cmd.length + 1);\n      return {\n        ...adminCommands[cmd],\n        params: params\n      };\n    }\n  }\n  \n  return null;\n}\n\n// 📱 ГЕНЕРАТОР РАСШИРЕННОЙ АДМИН-ПАНЕЛИ\nfunction generateEnhancedAdminPanel() {\n  return [\n    [\n      { text: '📊 Статистика', callback_data: 'admin_stats' },\n      { text: '👥 Пользователи', callback_data: 'admin_users' }\n    ],\n    [\n      { text: '📢 Рассылки', callback_data: 'admin_broadcast' },\n      { text: '🔔 Уведомления', callback_data: 'admin_notifications' }\n    ],\n    [\n      { text: '🎵 Музыка', callback_data: 'admin_music' },\n      { text: '💡 Рекомендации', callback_data: 'admin_recommendations' }\n    ],\n    [\n      { text: '💾 Экспорт данных', callback_data: 'admin_export' },\n      { text: '⚙️ Настройки бота', callback_data: 'admin_settings' }\n    ],\n    [\n      { text: '📈 Дашборд', callback_data: 'admin_dashboard' },\n      { text: '🚪 Выход', callback_data: 'main_menu' }\n    ]\n  ];\n}\n\n// 🎯 ОБРАБОТЧИКИ CALLBACK QUERIES\nfunction handleAdminCallback(callbackData) {\n  const callbacks = {\n    'admin_stats': { \n      action: 'show_stats', \n      permission: 'view_stats',\n      needsData: true \n    },\n    'admin_users': { \n      action: 'list_users', \n      permission: 'manage_users',\n      needsData: true \n    },\n    'admin_broadcast': { \n      action: 'create_broadcast', \n      permission: 'broadcast' \n    },\n    'admin_notifications': { \n      action: 'notification_settings', \n      permission: 'notification_settings',\n      needsData: true \n    },\n    'admin_music': { \n      action: 'music_library', \n      permission: 'music_management',\n      needsData: true \n    },\n    'admin_recommendations': { \n      action: 'recommendation_stats', \n      permission: 'view_stats',\n      needsData: true \n    },\n    'admin_export': { \n      action: 'export_menu', \n      permission: 'export_data' \n    },\n    'admin_settings': { \n      action: 'bot_settings', \n      permission: 'system_settings' \n    },\n    'admin_dashboard': { \n      action: 'full_dashboard', \n      permission: 'view_stats',\n      needsData: true \n    }\n  };\n  \n  return callbacks[callbackData] || null;\n}\n\n// 🔄 ГЛАВНАЯ ФУНКЦИЯ БЕЗОПАСНОСТИ\nfunction enhancedAdminSecurityCheck(chatId, messageText) {\n  console.log('🛡️ Enhanced admin security check started');\n  \n  // Базовая проверка на админа\n  const adminCheck = checkAdminAccess(chatId);\n  \n  if (!adminCheck.isAdmin) {\n    // НЕ АДМИН - логируем попытку доступа\n    const unauthorizedLog = logAdminAction(chatId, 'unauthorized_access_attempt', { \n      attempted_command: messageText,\n      result: 'blocked'\n    });\n    \n    return {\n      access: 'denied',\n      reason: 'not_admin',\n      logData: unauthorizedLog,\n      response: '❌ У вас нет прав администратора.'\n    };\n  }\n  \n  // Обрабатываем callback query\n  if (messageText.startsWith('callback:')) {\n    const callbackData = messageText.replace('callback:', '');\n    const callbackInfo = handleAdminCallback(callbackData);\n    \n    if (!callbackInfo) {\n      return {\n        access: 'unknown_callback',\n        reason: 'invalid_callback',\n        response: 'ℹ️ Неизвестная команда.'\n      };\n    }\n    \n    // Проверяем права на callback\n    if (callbackInfo.permission) {\n      const permissionCheck = checkAdminAccess(chatId, callbackInfo.permission);\n      \n      if (!permissionCheck.hasPermission) {\n        const deniedLog = logAdminAction(chatId, 'callback_permission_denied', {\n          callback: callbackInfo.action,\n          required_permission: callbackInfo.permission\n        });\n        \n        return {\n          access: 'denied',\n          reason: 'insufficient_permissions',\n          logData: deniedLog,\n          response: `🚫 Недостаточно прав для \"${callbackInfo.action}\"`\n        };\n      }\n    }\n    \n    const successLog = logAdminAction(chatId, callbackInfo.action, {\n      callback_data: callbackData,\n      permission_used: callbackInfo.permission\n    });\n    \n    return {\n      access: 'granted',\n      command: callbackInfo,\n      adminInfo: adminCheck,\n      logData: successLog,\n      response: null\n    };\n  }\n  \n  // Парсим текстовую команду\n  const commandInfo = parseAdminCommand(messageText);\n  \n  if (!commandInfo) {\n    return {\n      access: 'unknown_command',\n      reason: 'invalid_command',\n      response: `ℹ️ Неизвестная команда. Используйте /admin для помощи.`\n    };\n  }\n  \n  // Проверяем права на конкретную команду\n  if (commandInfo.permission) {\n    const permissionCheck = checkAdminAccess(chatId, commandInfo.permission);\n    \n    if (!permissionCheck.hasPermission) {\n      const deniedLog = logAdminAction(chatId, 'permission_denied', {\n        command: commandInfo.action,\n        required_permission: commandInfo.permission\n      });\n      \n      return {\n        access: 'denied',\n        reason: 'insufficient_permissions',\n        logData: deniedLog,\n        response: `🚫 Недостаточно прав для команды \"${commandInfo.action}\"`\n      };\n    }\n  }\n  \n  // ✅ ДОСТУП РАЗРЕШЕН\n  const successLog = logAdminAction(chatId, commandInfo.action, {\n    permission_used: commandInfo.permission,\n    params: commandInfo.params\n  });\n  \n  return {\n    access: 'granted',\n    command: commandInfo,\n    adminInfo: adminCheck,\n    logData: successLog,\n    response: null\n  };\n}\n\n// 🔄 ОСНОВНАЯ ЛОГИКА ОБРАБОТКИ\nconst securityResult = enhancedAdminSecurityCheck(chatId, rawText);\n\n// Обрабатываем результат проверки безопасности\nif (securityResult.access === 'denied') {\n  return [{\n    json: {\n      requestType: 'security_violation',\n      chatId: chatId,\n      originalText: rawText,\n      securityResponse: securityResult.response,\n      reason: securityResult.reason,\n      logData: securityResult.logData // Для сохранения в БД\n    }\n  }];\n}\n\nif (securityResult.access === 'unknown_command' || securityResult.access === 'unknown_callback') {\n  return [{\n    json: {\n      requestType: 'admin_help',\n      chatId: chatId,\n      originalText: rawText,\n      response: securityResult.response\n    }\n  }];\n}\n\nif (securityResult.access === 'granted') {\n  const command = securityResult.command;\n  const adminInfo = securityResult.adminInfo;\n  \n  console.log('✅ Enhanced admin command authorized:', command.action);\n  \n  // Определяем тип ответа на основе команды\n  const responseType = getResponseType(command.action);\n  \n  return [{\n    json: {\n      requestType: responseType,\n      chatId: chatId,\n      action: command.action,\n      params: command.params,\n      adminInfo: adminInfo,\n      logData: securityResult.logData,\n      needsData: command.needsData || false,\n      \n      // Специфичные данные для разных команд\n      ...getCommandSpecificData(command)\n    }\n  }];\n}\n\n// Если дошли сюда - что-то пошло не так\nreturn [{\n  json: {\n    requestType: 'security_error',\n    chatId: chatId,\n    originalText: rawText,\n    response: '🚨 Ошибка системы безопасности. Обратитесь к разработчику.'\n  }\n}];\n\n// 🎯 ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ\nfunction getResponseType(action) {\n  const responseMap = {\n    'show_panel': 'admin_panel',\n    'show_stats': 'admin_stats_request',\n    'show_dashboard': 'admin_dashboard_request',\n    'list_users': 'admin_users_request',\n    'create_broadcast': 'admin_broadcast_create',\n    'music_library': 'admin_music_request',\n    'recommendation_stats': 'admin_recommendations_request',\n    'export_menu': 'admin_export_menu'\n  };\n  \n  return responseMap[action] || 'admin_generic_action';\n}\n\nfunction getCommandSpecificData(command) {\n  switch(command.action) {\n    case 'show_panel':\n      return {\n        welcomeMessage: `🛡️ **АДМИН-ПАНЕЛЬ** 🛡️\\\\n\\\\n⚡ Расширенная система управления\\\\n🔐 Полный доступ ко всем функциям\\\\n\\\\n⚡ Выберите действие:`,\n        panelButtons: generateEnhancedAdminPanel()\n      };\n      \n    case 'show_stats':\n      return {\n        statsQueries: [\n          'SELECT * FROM get_admin_stats()',\n          'SELECT COUNT(*) as music_tracks FROM music_library WHERE is_active = true',\n          'SELECT COUNT(*) as pending_notifications FROM notification_schedule WHERE is_enabled = true'\n        ]\n      };\n      \n    case 'list_users':\n      return {\n        userQuery: command.params ? \n          `SELECT * FROM get_active_users(${parseInt(command.params) || 7})` :\n          'SELECT * FROM get_active_users(7)',\n        limit: 50\n      };\n      \n    case 'create_broadcast':\n      return {\n        step: 'message_input',\n        broadcastFlow: 'enhanced'\n      };\n      \n    default:\n      return {};\n  }\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        752,
+        -144
+      ],
+      "id": "68d3c604-7c0d-43c4-9658-d1d52e10ef24",
+      "name": "Admin Security Enhanced\""
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "616f7703-5c2b-47b5-aaa4-d81b1b6fb0d1",
+              "leftValue": "={{$json.requestType}}",
+              "rightValue": "subscription_inquiry",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1808,
+        -1296
+      ],
+      "id": "8b2ae5b4-bd72-41af-a487-69537e7831fd",
+      "name": "IF Subscription Check",
+      "alwaysOutputData": false,
+      "retryOnFail": false,
+      "executeOnce": false,
+      "notesInFlow": false,
+      "maxTries": 5
+    },
+    {
+      "parameters": {
+        "jsCode": "// 🔔 SUBSCRIPTION HANDLER - БЕЗ КНОПОК (только текст)\nconst input = $input.first();\nconst request = input.json;\nconst chatId = request.chatId;\nconst keyword = request.keyword;\nconst originalText = request.originalText;\n\nconsole.log('🔔 Processing subscription request:', keyword, 'for user:', chatId);\n\n// 📋 Анализируем намерение пользователя\nfunction analyzeSubscriptionIntent(text, keyword) {\n  const normalized = text.toLowerCase();\n  \n  if (keyword.includes('подпис') && !keyword.includes('отпис')) {\n    return 'subscribe';\n  } else if (keyword.includes('отпис') || keyword.includes('отключ')) {\n    return 'unsubscribe';\n  } else if (keyword.includes('настройк') || keyword.includes('время')) {\n    return 'settings';\n  } else if (keyword.includes('получать') || keyword.includes('уведомлен')) {\n    return 'info_request';\n  }\n  \n  return 'subscribe'; // По умолчанию - подписка\n}\n\nconst intent = analyzeSubscriptionIntent(originalText, keyword);\nconsole.log('🎯 Detected intent:', intent);\n\nswitch(intent) {\n  case 'subscribe':\n    return [{\n      json: {\n        action: 'subscription_offer',\n        chatId: chatId,\n        message: `🔔 **Ежедневные советы по ароматерапии**\n\n📢 **Что вы получите:**\n🌅 **Утром (9:00):** Энергичные рекомендации для отличного дня\n🌙 **Вечером (20:00):** Расслабляющие советы и музыка  \n🎵 **Персональные плейлисты** с подходящими эфирными маслами\n📚 **Эксклюзивные материалы** и исследования\n\n⚡ **Особенности:**\n• Персонализация под ваше настроение\n• Интеграция с музыкальными платформами\n• Программа \"21 день с маслами\"  \n• Отписка в любой момент\n\n💡 **Это бесплатно!**\n\n📝 **Для подписки напишите:** \"да, подписаться\"\n📝 **Узнать подробнее:** \"расскажи подробнее\"\n📝 **Настроить время:** \"настройки времени\"\n📝 **Отмена:** \"не сейчас\"`,\n        subscriptionData: {\n          intent: intent,\n          originalKeyword: keyword,\n          nextSteps: ['да, подписаться', 'расскажи подробнее', 'настройки времени', 'не сейчас']\n        }\n      }\n    }];\n\n  case 'unsubscribe':\n    return [{\n      json: {\n        action: 'unsubscribe_confirmation',\n        chatId: chatId,\n        message: `😔 **Отключение уведомлений**\n\nВы уверены, что хотите отписаться от ежедневных советов?\n\n💔 **Вы больше не будете получать:**\n• Утренние рекомендации масел\n• Вечерние расслабляющие советы\n• Персональные музыкальные подборки\n• Эксклюзивные материалы\n\n💡 **Варианты:**\n\n📝 **Отписаться полностью:** \"да, отписаться\"\n📝 **Изменить настройки:** \"изменить настройки\"  \n📝 **Пауза на неделю:** \"пауза на неделю\"\n📝 **Передумал:** \"передумал\"`,\n        subscriptionData: {\n          intent: intent,\n          nextSteps: ['да, отписаться', 'изменить настройки', 'пауза на неделю', 'передумал']\n        }\n      }\n    }];\n\n  case 'settings':\n    return [{\n      json: {\n        action: 'subscription_settings',\n        chatId: chatId,\n        message: `⚙️ **Настройки уведомлений**\n\n🕘 **Текущие настройки:**\n🌅 Утром: 9:00 МСК ✅\n🌙 Вечером: 20:00 МСК ✅\n🎵 Музыка: включена ✅\n🌍 Часовой пояс: Europe/Moscow\n\n🎛️ **Что можно изменить:**\n\n📝 **Изменить время:** \"изменить время\"\n📝 **Настройки музыки:** \"настройки музыки\"\n📝 **Только утром:** \"только утром\"\n📝 **Только вечером:** \"только вечером\"  \n📝 **Часовой пояс:** \"часовой пояс\"\n📝 **Всё готово:** \"настройки готовы\"`,\n        subscriptionData: {\n          intent: intent,\n          nextSteps: ['изменить время', 'настройки музыки', 'только утром', 'только вечером', 'часовой пояс', 'настройки готовы']\n        }\n      }\n    }];\n\n  case 'info_request':\n    return [{\n      json: {\n        action: 'subscription_info',\n        chatId: chatId,\n        message: `ℹ️ **Информация о подписке**\n\n🎯 **Цель:** Помочь вам получить максимум от ароматерапии\n\n📱 **Формат уведомлений:**\n• Короткие, полезные сообщения (1-2 минуты чтения)\n• Конкретные рекомендации на день\n• Ссылки на музыку для усиления эффекта\n• Интерактивные элементы\n\n🎵 **Музыкальная интеграция:**\n• Spotify, YouTube, Apple Music, Яндекс.Музыка\n• Специальные плейлисты для каждого настроения\n• Синхронизация музыки и ароматов\n\n📊 **Персонализация:**\n• Анализ ваших предпочтений\n• Адаптация под настроение\n• Учет времени года и погоды\n\n🔒 **Конфиденциальность:**\n• Никаких продаж данных\n• Только для улучшения рекомендаций\n• Полный контроль над подпиской\n\n📝 **Готовы подписаться?** Напишите: \"да, подписаться\"\n📝 **Примеры музыки:** \"примеры музыки\"\n📝 **Задать вопрос:** \"у меня вопрос\"`,\n        subscriptionData: {\n          intent: intent,\n          nextSteps: ['да, подписаться', 'примеры музыки', 'у меня вопрос']\n        }\n      }\n    }];\n\n  default:\n    return [{\n      json: {\n        action: 'subscription_error',\n        chatId: chatId,\n        message: `🤔 Не совсем понял ваш запрос о подписке.\n\n💡 **Я могу помочь с:**\n\n📝 **Подписаться:** \"подписаться на советы\"\n📝 **Отписаться:** \"отписаться от уведомлений\"\n📝 **Настройки:** \"настройки времени\"\n📝 **Информация:** \"расскажи о подписке\"\n\nПросто напишите одну из фраз выше! 😊`,\n        subscriptionData: {\n          intent: 'unknown',\n          originalText: originalText,\n          nextSteps: ['подписаться на советы', 'отписаться от уведомлений', 'настройки времени', 'расскажи о подписке']\n        }\n      }\n    }];\n}\n\n// 🔍 ЛОГИРОВАНИЕ для аналитики\nconsole.log('📊 Subscription request processed:', {\n  chatId: chatId,\n  intent: intent,\n  keyword: keyword,\n  timestamp: new Date().toISOString()\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2080,
+        -1296
+      ],
+      "id": "5fd450b5-bc7a-4f4d-b44e-b0958f73e4b5",
+      "name": "Subscription Handler"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2576,
+        -1328
+      ],
+      "id": "bfbd4d35-2c96-453f-b272-45bb95963905",
+      "name": "Telegram1",
+      "webhookId": "9284bd4e-4ecc-4aef-870e-ecd34948c2fc",
+      "credentials": {
+        "telegramApi": {
+          "id": "r86pcb9P39ijiBL9",
+          "name": "Эфирные масла "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ✅ SUBSCRIPTION CONFIRMATION HANDLER - Обработчик подтверждений\nconst input = $input.first();\nconst request = input.json;\nconst chatId = request.chatId;\nconst userName = request.userName || 'Пользователь';\nconst confirmationType = request.confirmationType;\nconst matchedPattern = request.matchedPattern;\n\nconsole.log('✅ Processing confirmation:', confirmationType, 'for user:', chatId);\nconsole.log('📝 Matched pattern:', matchedPattern);\n\nswitch(confirmationType) {\n  case 'confirm_subscribe':\n    return [{\n      json: {\n        action: 'subscription_confirmed',\n        chatId: chatId,\n        message: `🎉 **Отлично, ${userName}! Вы подписались!**\n\n✅ **Теперь вы будете получать:**\n🌅 **Утренние советы** каждый день в 9:00 МСК\n🌙 **Вечерние рекомендации** каждый день в 20:00 МСК\n🎵 **Персональные плейлисты** с эфирными маслами\n\n🚀 **Что дальше?**\n• Завтра утром получите первый совет\n• Напишите \"музыка на сегодня\" для пробного плейлиста\n• Используйте \"настройки\" для изменения времени\n\n💡 **Полезные команды:**\n📝 \"статус подписки\" - проверить настройки\n📝 \"отписаться\" - отключить уведомления  \n📝 \"настройки\" - изменить время и предпочтения\n\n🌿 **Добро пожаловать в мир ароматерапии!**`,\n        subscriptionData: {\n          status: 'active',\n          subscribedAt: new Date().toISOString(),\n          preferences: {\n            morning_enabled: true,\n            evening_enabled: true,\n            morning_time: '09:00',\n            evening_time: '20:00',\n            timezone: 'Europe/Moscow',\n            music_enabled: true\n          }\n        }\n      }\n    }];\n    \n  case 'confirm_unsubscribe':\n    return [{\n      json: {\n        action: 'unsubscription_confirmed',\n        chatId: chatId,\n        message: `😔 **Подписка отключена**\n\nВы больше не будете получать ежедневные уведомления.\n\n💙 **Мы будем скучать, ${userName}!** \n\n🔄 **Вы всегда можете вернуться:**\n📝 Напишите \"подписаться\" в любое время\n\n🌿 **Я всё ещё могу помочь с маслами!**\n• Просто спросите про любое масло\n• Опишите своё настроение  \n• Запросите музыкальные рекомендации\n\nУдачи вам! 🍀`,\n        subscriptionData: {\n          status: 'unsubscribed',\n          unsubscribedAt: new Date().toISOString()\n        }\n      }\n    }];\n    \n  case 'request_details':\n    return [{\n      json: {\n        action: 'subscription_details_provided',\n        chatId: chatId,\n        message: `📚 **Подробнее о подписке**\n\n🔬 **Научный подход:**\n• Все рекомендации основаны на клинических исследованиях\n• Ссылки на научные статьи PubMed\n• Проверенные дозировки и способы применения\n• Учёт противопоказаний и взаимодействий\n\n🎵 **Уникальная музыкальная интеграция:**\n• Специально подобранные треки для каждого масла\n• Научно обоснованная синхронизация ритма и аромата\n• Плейлисты для разного времени суток и настроения\n• Поддержка всех популярных платформ\n\n📊 **Персонализация с ИИ:**\n• Анализ ваших предпочтений и реакций\n• Адаптация под время активности и сна\n• Учёт сезонных изменений и погоды\n• Интеграция с программой \"21 день\"\n\n🎁 **Эксклюзивный контент:**\n• Рецепты смесей от экспертов\n• Видео-уроки по применению\n• Статьи о новых исследованиях\n• Доступ к закрытому сообществу\n\n🔒 **Безопасность и конфиденциальность:**\n• Никаких продаж персональных данных\n• Шифрование всей информации\n• Полный контроль над подпиской\n• Моментальная отписка в любое время\n\n❓ **Готовы попробовать?** \n📝 Напишите \"да, подписаться\"`,\n        subscriptionData: {\n          detailsRequested: true,\n          requestedAt: new Date().toISOString()\n        }\n      }\n    }];\n    \n  case 'time_settings':\n    return [{\n      json: {\n        action: 'time_settings_request',\n        chatId: chatId,\n        message: `⏰ **Настройка времени уведомлений**\n\n🕘 **Текущие настройки:**\n🌅 Утренние уведомления: 9:00 МСК\n🌙 Вечерние уведомления: 20:00 МСК\n🌍 Часовой пояс: Europe/Moscow\n\n🎛️ **Что хотите изменить?**\n\n📝 **Утреннее время:** \"утром в 8:00\" или \"утром в 10:30\"\n📝 **Вечернее время:** \"вечером в 19:00\" или \"вечером в 21:00\"  \n📝 **Часовой пояс:** \"часовой пояс Екатеринбург\"\n📝 **Только утром:** \"убрать вечерние\"\n📝 **Только вечером:** \"убрать утренние\"\n📝 **Отложить настройку:** \"пока не надо\"\n\n💡 **Примеры:**\n• \"утром в 7:30\" - установит утренние уведомления на 7:30\n• \"вечером в 22:00\" - установит вечерние на 22:00\n• \"убрать утренние\" - оставит только вечерние уведомления`,\n        subscriptionData: {\n          currentSettings: {\n            morning_time: '09:00',\n            evening_time: '20:00',\n            timezone: 'Europe/Moscow'\n          },\n          settingsMode: 'time_adjustment'\n        }\n      }\n    }];\n    \n  case 'music_settings':\n    return [{\n      json: {\n        action: 'music_settings_request',\n        chatId: chatId,\n        message: `🎵 **Настройки музыкальных рекомендаций**\n\n🎧 **Текущие настройки:**\n✅ Музыкальные рекомендации включены\n🎼 Платформы: Spotify, YouTube, Apple Music, Яндекс.Музыка\n🎭 Жанры: все доступные\n\n🎛️ **Что можно настроить:**\n\n📝 **Предпочитаемые платформы:** \"только Spotify\" или \"Spotify и YouTube\"\n📝 **Любимые жанры:** \"классика и эмбиент\" или \"только инструментальная\"\n📝 **Избегать жанры:** \"без рока\" или \"без электронной музыки\"\n📝 **Длительность треков:** \"короткие треки\" или \"длинные композиции\"\n📝 **Отключить музыку:** \"без музыки\" \n📝 **Оставить как есть:** \"музыка норм\"\n\n🎼 **Популярные комбинации:**\n• \"только спокойная музыка\" - классика, эмбиент, природные звуки\n• \"энергичная музыка\" - поп, джаз, инди\n• \"для медитации\" - тибетские чаши, мантры, звуки природы`,\n        subscriptionData: {\n          currentMusicSettings: {\n            enabled: true,\n            platforms: ['spotify', 'youtube', 'apple_music', 'yandex_music'],\n            genres: 'all'\n          },\n          settingsMode: 'music_preferences'\n        }\n      }\n    }];\n\n  case 'morning_only':\n    return [{\n      json: {\n        action: 'morning_only_confirmed',\n        chatId: chatId,\n        message: `🌅 **Настройка сохранена!**\n\n✅ Теперь вы будете получать **только утренние уведомления** в 9:00 МСК\n\n🌙 **Вечерние уведомления отключены**\n\n💡 **Ваш режим:**\n• Каждое утро - энергичные рекомендации для отличного дня\n• Масла для бодрости, концентрации и мотивации  \n• Музыка для продуктивности и хорошего настроения\n\n🔄 **Хотите изменить?**\n📝 \"включить вечерние\" - восстановить вечерние уведомления\n📝 \"изменить время\" - поменять время утренних уведомлений`,\n        subscriptionData: {\n          morning_enabled: true,\n          evening_enabled: false,\n          morning_time: '09:00',\n          updatedAt: new Date().toISOString()\n        }\n      }\n    }];\n\n  case 'evening_only':\n    return [{\n      json: {\n        action: 'evening_only_confirmed',\n        chatId: chatId,\n        message: `🌙 **Настройка сохранена!**\n\n✅ Теперь вы будете получать **только вечерние уведомления** в 20:00 МСК\n\n🌅 **Утренние уведомления отключены**\n\n💡 **Ваш режим:**\n• Каждый вечер - расслабляющие советы для отдыха\n• Масла для релаксации, сна и восстановления\n• Успокаивающая музыка для снятия стресса дня\n\n🔄 **Хотите изменить?**\n📝 \"включить утренние\" - восстановить утренние уведомления  \n📝 \"изменить время\" - поменять время вечерних уведомлений`,\n        subscriptionData: {\n          morning_enabled: false,\n          evening_enabled: true,\n          evening_time: '20:00',\n          updatedAt: new Date().toISOString()\n        }\n      }\n    }];\n\n  case 'cancel_action':\n    return [{\n      json: {\n        action: 'action_cancelled',\n        chatId: chatId,\n        message: `👌 **Хорошо, ${userName}!**\n\nНичего страшного! Если передумаете - я всегда здесь. 😊\n\n🌿 **А пока могу помочь с маслами:**\n• Просто спросите про любое масло\n• Опишите своё настроение или проблему\n• Запросите музыкальные рекомендации\n• Напишите \"подписаться\" когда будете готовы\n\n💡 **Популярные запросы:**\n📝 \"лаванда\" - узнать про масло лаванды\n📝 \"стресс\" - рекомендации для снятия стресса\n📝 \"музыка для расслабления\" - получить плейлист`,\n        subscriptionData: {\n          actionCancelled: true,\n          cancelledAt: new Date().toISOString()\n        }\n      }\n    }];\n\n  default:\n    return [{\n      json: {\n        action: 'unknown_confirmation',\n        chatId: chatId,\n        message: `🤔 **Не совсем понял ваш запрос**\n\nЕсли хотите подписаться на уведомления:\n📝 **Напишите:** \"да, подписаться\"\n\nЕсли хотите узнать подробнее:\n📝 **Напишите:** \"расскажи подробнее\"\n\nИли просто спросите про любое эфирное масло! 🌿`,\n        subscriptionData: {\n          confirmationType: confirmationType,\n          originalPattern: matchedPattern,\n          needsManualReview: true\n        }\n      }\n    }];\n}\n\n// 🔍 ЛОГИРОВАНИЕ для аналитики\nconsole.log('📊 Subscription confirmation processed:', {\n  chatId: chatId,\n  confirmationType: confirmationType,\n  matchedPattern: matchedPattern,\n  userName: userName,\n  timestamp: new Date().toISOString()\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2064,
+        -1056
+      ],
+      "id": "395c4297-277e-47bf-8895-19169e62b20d",
+      "name": "Subscription Confirmation Handler\""
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "🎉 Отлично, Дмитрий! Вы подписались!\n ✅ Теперь вы будете получать: \n🌅 Утренние советы каждый день в 9:00 МСК \n🌙 Вечерние рекомендации каждый день в 20:00 МСК ...",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2528,
+        -1056
+      ],
+      "id": "498ceb81-9002-498f-8d0c-8573feb9b565",
+      "name": "Telegram Response",
+      "webhookId": "b8286d60-9989-4518-bd1c-ba4730ba4a35",
+      "credentials": {
+        "telegramApi": {
+          "id": "r86pcb9P39ijiBL9",
+          "name": "Эфирные масла "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "803ae986-eb51-4f99-ad5e-6fc14e7dea52",
+              "leftValue": "={{ $json.requestType }}",
+              "rightValue": "subscription_confirmation",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1808,
+        -1040
+      ],
+      "id": "eab956fb-a914-4661-a1c1-2bd8a022fbb2",
+      "name": "Subscription Confirmation Check"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "subscribers",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Smart Router').first().json.chatId }}"
+            },
+            {
+              "keyName": "username",
+              "condition": "eq",
+              "keyValue": "={{ $('Smart Router').first().json.userName }}"
+            },
+            {
+              "keyName": "first_name",
+              "condition": "eq",
+              "keyValue": "={{ $('Smart Router').first().json.userName }}"
+            },
+            {
+              "keyName": "updated_at",
+              "condition": "eq",
+              "keyValue": "={{ new Date().toISOString() }}"
+            },
+            {
+              "keyName": "subscription_date",
+              "condition": "eq",
+              "keyValue": "={{ new Date().toISOString() }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "is_active",
+              "fieldValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2288,
+        -1296
+      ],
+      "id": "c28fbd5c-b9d7-4bea-9f35-1347edc977a9",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "jyysiKb0eSXuvPiH",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "subscribers",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chat_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Smart Router').first().json.chatId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "is_active",
+              "fieldValue": "true"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ new Date().toISOString() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2288,
+        -1040
+      ],
+      "id": "31d7ca84-c7e0-4fe4-9b78-f1e40e1ba332",
+      "name": "Update a row1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "jyysiKb0eSXuvPiH",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ece5de98-b146-4eba-82e3-5675c1e79fc0",
+              "leftValue": "={{ $json.requestType }}",
+              "rightValue": "subscription_info_request",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1776,
+        -784
+      ],
+      "id": "1dd6eed7-a50e-43b7-b75d-f6e3f06a97f2",
+      "name": "subscription_info_request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 📚 SUBSCRIPTION INFO HANDLER\nconst input = $input.first();\nconst request = input.json;\nconst chatId = request.chatId;\nconst userName = request.userName || 'Пользователь';\n\nconsole.log('📚 Providing subscription info for:', chatId);\n\nreturn [{\n  json: {\n    action: 'subscription_info_provided',\n    chatId: chatId,\n    message: `📚 **Подробно о ежедневных советах, ${userName}:**\n\n🤖 **Как работает система:**\n- Умный AI анализирует время года, погоду, день недели\n- Подбирает персональные рекомендации под ваши потребности  \n- Учитывает вашу историю запросов и предпочтения\n\n📱 **Что вы получите:**\n🌅 **Утром (9:00 МСК):**\n   • Энергичные масла для продуктивного дня\n   • Конкретные инструкции применения\n   • Научные обоснования эффектов\n\n🌙 **Вечером (20:00 МСК):**\n   • Расслабляющие ароматы для восстановления\n   • Рецепты для качественного сна\n   • Техники снятия стресса дня\n\n🎵 **Уникальные плейлисты:**\n   • Музыка, синхронизированная с ароматами\n   • Ссылки на Spotify, YouTube, Apple Music\n   • Научно обоснованные сочетания звука и запаха\n\n📊 **Персонализация:**\n   • Адаптация под ваше настроение и цели\n   • Избежание повторов рекомендаций\n   • Сезонные и погодные корректировки\n\n⚙️ **Гибкие настройки:**\n   • Любое удобное время уведомлений\n   • Только утро, только вечер, или оба\n   • Отключение музыки при желании\n   • Моментальная отписка\n\n💡 **Абсолютно бесплатно!** Без скрытых платежей и навязывания покупок.\n\n🔬 **Научный подход:** Все рекомендации основаны на актуальных исследованиях с ссылками на источники.`,\n\n    keyboard: [\n      [\n        { text: \"✅ Звучит отлично! Подписаться\", callback_data: \"confirm_subscribe\" }\n      ],\n      [\n        { text: \"⏰ Настроить время уведомлений\", callback_data: \"time_settings\" },\n        { text: \"💰 Точно бесплатно?\", callback_data: \"pricing_question\" }\n      ],\n      [\n        { text: \"🎵 Примеры музыкальных плейлистов\", callback_data: \"music_examples\" },\n        { text: \"🔬 Научные источники\", callback_data: \"science_sources\" }\n      ],\n      [\n        { text: \"❌ Не сейчас\", callback_data: \"main_menu\" }\n      ]\n    ]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2032,
+        -816
+      ],
+      "id": "32c7d302-c1cf-45f5-9f9b-b701a95bcf25",
+      "name": "SUBSCRIPTION INFO HANDLER"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "123",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2480,
+        -816
+      ],
+      "id": "c929b6f4-3670-49d3-9b37-bb51e3859230",
+      "name": "Send a text message",
+      "webhookId": "2e052f12-dc89-4ca7-b961-46a0b54aa1ed",
+      "credentials": {
+        "telegramApi": {
+          "id": "r86pcb9P39ijiBL9",
+          "name": "Эфирные масла "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2240,
+        -816
+      ],
+      "id": "81a8a3b9-9e28-4889-8572-f2261946facd",
+      "name": "Get a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "jyysiKb0eSXuvPiH",
+          "name": "Supabase account"
+        }
+      },
+      "disabled": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Smart Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Matching Oil": {
+      "main": [
+        [
+          {
+            "node": "Telegram Sender",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Smart Router": {
+      "main": [
+        [
+          {
+            "node": "Admin Security Enhanced\"",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Direct Search": {
+      "main": [
+        [
+          {
+            "node": "Supabase2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "keyword_search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase2": {
+      "main": [
+        [
+          {
+            "node": "Filter Matching Oil",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "keyword_search": {
+      "main": [
+        [
+          {
+            "node": "Get All Oils for AI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Default Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Oils for AI": {
+      "main": [
+        [
+          {
+            "node": "AI Agent код",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Start Command": {
+      "main": [
+        [
+          {
+            "node": "Start Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF Direct Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent. Fast",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent код": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Perplexity": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent Perplexity)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Disambiguation": {
+      "main": [
+        [
+          {
+            "node": "Disambiguation Router",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "IF Oil Comparison": {
+      "main": [
+        [
+          {
+            "node": "Oil Comparison Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Disambiguation Router": {
+      "main": [
+        [
+          {
+            "node": "IF Mint",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF Pepper",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF Sage",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF Eucalyptus",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF Pixta",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF мандарин",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF базилик",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF Ситрус",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF Холидей",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF Дерево",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Mint": {
+      "main": [
+        [
+          {
+            "node": "Disambiguation Mint (для мяты)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Pepper": {
+      "main": [
+        [
+          {
+            "node": "Disambiguation Pepper (для перца)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Sage": {
+      "main": [
+        [
+          {
+            "node": "Disambiguation Sage (для шалфея)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Eucalyptus": {
+      "main": [
+        [
+          {
+            "node": "Disambiguation Eucalyptus (для эвкалипта)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Pixta": {
+      "main": [
+        [
+          {
+            "node": "Disambiguation Pixta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF мандарин": {
+      "main": [
+        [
+          {
+            "node": "Disambiguation мандарин",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF базилик": {
+      "main": [
+        [
+          {
+            "node": "Disambiguation basil",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Ситрус": {
+      "main": [
+        [
+          {
+            "node": "Disambiguation Ситрус",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Холидей": {
+      "main": [
+        [
+          {
+            "node": "Disambiguation Холидей",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Дерево": {
+      "main": [
+        [
+          {
+            "node": "Disambiguation Дерево",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "AI Agent Perplexity)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent. Fast",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Perplexity)": {
+      "main": [
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent. Fast": {
+      "main": [
+        [
+          {
+            "node": "Telegram AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Perplexity)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Admin Security Enhanced\"": {
+      "main": [
+        [
+          {
+            "node": "IF Start Command",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF Oil Comparison",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF Disambiguation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF Subscription Check",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Subscription Confirmation Check",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "subscription_info_request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Subscription Check": {
+      "main": [
+        [
+          {
+            "node": "Subscription Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subscription Handler": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subscription Confirmation Handler\"": {
+      "main": [
+        [
+          {
+            "node": "Update a row1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subscription Confirmation Check": {
+      "main": [
+        [
+          {
+            "node": "Subscription Confirmation Handler\"",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row": {
+      "main": [
+        [
+          {
+            "node": "Telegram1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row1": {
+      "main": [
+        [
+          {
+            "node": "Telegram Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "subscription_info_request": {
+      "main": [
+        [
+          {
+            "node": "SUBSCRIPTION INFO HANDLER",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SUBSCRIPTION INFO HANDLER": {
+      "main": [
+        [
+          {
+            "node": "Get a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "5d3582d4-8d6c-4e3a-8ae2-6c06de6f6330",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "50a20d3245a007b322bac617c092362ad914bd86617e47d80b1342883775b33c"
+  },
+  "id": "UKkyHBafcO7Zxhb7",
+  "tags": []
+}

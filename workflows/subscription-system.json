@@ -1,0 +1,236 @@
+{
+  "name": "Система подписок",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "subscription-inquiry-condition",
+              "leftValue": "={{ $json.requestType }}",
+              "rightValue": "subscription_inquiry",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1280, -144],
+      "id": "if-subscription-inquiry",
+      "name": "IF Subscription Inquiry"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Обработчик запросов о подписке\nconst input = $input.first();\nconst request = input.json;\nconst chatId = request.chatId;\nconst keyword = request.keywords?.[0] || '';\nconst originalText = request.originalText;\n\nconsole.log('🔔 Processing subscription request:', keyword, 'for user:', chatId);\n\n// Анализ намерения пользователя\nfunction analyzeSubscriptionIntent(text, keyword) {\n  const normalized = text.toLowerCase();\n  \n  if (keyword.includes('подпис') && !keyword.includes('отпис')) {\n    return 'subscribe';\n  } else if (keyword.includes('отпис') || keyword.includes('отключ')) {\n    return 'unsubscribe';\n  } else if (keyword.includes('настройк') || keyword.includes('время')) {\n    return 'settings';\n  } else if (keyword.includes('получать') || keyword.includes('уведомлен')) {\n    return 'info_request';\n  }\n  \n  return 'subscribe'; // По умолчанию - подписка\n}\n\nconst intent = analyzeSubscriptionIntent(originalText, keyword);\nconsole.log('🎯 Detected intent:', intent);\n\nswitch(intent) {\n  case 'subscribe':\n    return [{\n      json: {\n        action: 'subscription_offer',\n        chatId: chatId,\n        message: `🔔 **Ежедневные советы по ароматерапии**\n\n📢 **Что вы получите:**\n🌅 **Утром (9:00):** Энергичные рекомендации для отличного дня\n🌙 **Вечером (20:00):** Расслабляющие советы и музыка  \n🎵 **Персональные плейлисты** с подходящими эфирными маслами\n📚 **Эксклюзивные материалы** и исследования\n\n⚡ **Особенности:**\n• Персонализация под ваше настроение\n• Интеграция с музыкальными платформами\n• Программа \"21 день с маслами\"  \n• Отписка в любой момент\n\n💡 **Это бесплатно!**\n\n📝 **Для подписки напишите:** \"да, подписаться\"\n📝 **Узнать подробнее:** \"расскажи подробнее\"\n📝 **Настроить время:** \"настройки времени\"\n📝 **Отмена:** \"не сейчас\"`,\n        subscriptionData: {\n          intent: intent,\n          originalKeyword: keyword,\n          nextSteps: ['да, подписаться', 'расскажи подробнее', 'настройки времени', 'не сейчас']\n        }\n      }\n    }];\n\n  case 'unsubscribe':\n    return [{\n      json: {\n        action: 'unsubscribe_confirmation',\n        chatId: chatId,\n        message: `😔 **Отключение уведомлений**\n\nВы уверены, что хотите отписаться от ежедневных советов?\n\n💔 **Вы больше не будете получать:**\n• Утренние рекомендации масел\n• Вечерние расслабляющие советы\n• Персональные музыкальные подборки\n• Эксклюзивные материалы\n\n💡 **Варианты:**\n\n📝 **Отписаться полностью:** \"да, отписаться\"\n📝 **Изменить настройки:** \"изменить настройки\"  \n📝 **Пауза на неделю:** \"пауза на неделю\"\n📝 **Передумал:** \"передумал\"`,\n        subscriptionData: {\n          intent: intent,\n          nextSteps: ['да, отписаться', 'изменить настройки', 'пауза на неделю', 'передумал']\n        }\n      }\n    }];\n\n  case 'settings':\n    return [{\n      json: {\n        action: 'subscription_settings',\n        chatId: chatId,\n        message: `⚙️ **Настройки уведомлений**\n\n🕘 **Текущие настройки:**\n🌅 Утром: 9:00 МСК ✅\n🌙 Вечером: 20:00 МСК ✅\n🎵 Музыка: включена ✅\n🌍 Часовой пояс: Europe/Moscow\n\n🎛️ **Что можно изменить:**\n\n📝 **Изменить время:** \"изменить время\"\n📝 **Настройки музыки:** \"настройки музыки\"\n📝 **Только утром:** \"только утром\"\n📝 **Только вечером:** \"только вечером\"  \n📝 **Часовой пояс:** \"часовой пояс\"\n📝 **Всё готово:** \"настройки готовы\"`,\n        subscriptionData: {\n          intent: intent,\n          nextSteps: ['изменить время', 'настройки музыки', 'только утром', 'только вечером', 'часовой пояс', 'настройки готовы']\n        }\n      }\n    }];\n\n  default:\n    return [{\n      json: {\n        action: 'subscription_error',\n        chatId: chatId,\n        message: `🤔 Не совсем понял ваш запрос о подписке.\n\n💡 **Я могу помочь с:**\n\n📝 **Подписаться:** \"подписаться на советы\"\n📝 **Отписаться:** \"отписаться от уведомлений\"\n📝 **Настройки:** \"настройки времени\"\n📝 **Информация:** \"расскажи о подписке\"\n\nПросто напишите одну из фраз выше! 😊`,\n        subscriptionData: {\n          intent: 'unknown',\n          originalText: originalText,\n          nextSteps: ['подписаться на советы', 'отписаться от уведомлений', 'настройки времени', 'расскажи о подписке']\n        }\n      }\n    }];\n}\n\n// Логирование для аналитики\nconsole.log('📊 Subscription request processed:', {\n  chatId: chatId,\n  intent: intent,\n  keyword: keyword,\n  timestamp: new Date().toISOString()\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2080, -1296],
+      "id": "subscription-handler",
+      "name": "Subscription Handler"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "subscription-confirmation-condition",
+              "leftValue": "={{ $json.requestType }}",
+              "rightValue": "subscription_confirmation",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1280, -1040],
+      "id": "if-subscription-confirmation",
+      "name": "IF Subscription Confirmation"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Обработчик подтверждений подписки\nconst input = $input.first();\nconst request = input.json;\nconst chatId = request.chatId;\nconst userName = request.userName || 'Пользователь';\nconst confirmationType = request.confirmationType;\nconst matchedPattern = request.matchedPattern;\n\nconsole.log('✅ Processing confirmation:', confirmationType, 'for user:', chatId);\n\nswitch(confirmationType) {\n  case 'confirm_subscribe':\n    return [{\n      json: {\n        action: 'subscription_confirmed',\n        chatId: chatId,\n        message: `🎉 **Отлично, ${userName}! Вы подписались!**\n\n✅ **Теперь вы будете получать:**\n🌅 **Утренние советы** каждый день в 9:00 МСК\n🌙 **Вечерние рекомендации** каждый день в 20:00 МСК\n🎵 **Персональные плейлисты** с эфирными маслами\n\n🚀 **Что дальше?**\n• Завтра утром получите первый совет\n• Напишите \"музыка на сегодня\" для пробного плейлиста\n• Используйте \"настройки\" для изменения времени\n\n💡 **Полезные команды:**\n📝 \"статус подписки\" - проверить настройки\n📝 \"отписаться\" - отключить уведомления  \n📝 \"настройки\" - изменить время и предпочтения\n\n🌿 **Добро пожаловать в мир ароматерапии!**`,\n        subscriptionData: {\n          status: 'active',\n          subscribedAt: new Date().toISOString(),\n          preferences: {\n            morning_enabled: true,\n            evening_enabled: true,\n            morning_time: '09:00',\n            evening_time: '20:00',\n            timezone: 'Europe/Moscow',\n            music_enabled: true\n          }\n        }\n      }\n    }];\n    \n  case 'confirm_unsubscribe':\n    return [{\n      json: {\n        action: 'unsubscription_confirmed',\n        chatId: chatId,\n        message: `😔 **Подписка отключена**\n\nВы больше не будете получать ежедневные уведомления.\n\n💙 **Мы будем скучать, ${userName}!** \n\n🔄 **Вы всегда можете вернуться:**\n📝 Напишите \"подписаться\" в любое время\n\n🌿 **Я всё ещё могу помочь с маслами!**\n• Просто спросите про любое масло\n• Опишите своё настроение  \n• Запросите музыкальные рекомендации\n\nУдачи вам! 🍀`,\n        subscriptionData: {\n          status: 'unsubscribed',\n          unsubscribedAt: new Date().toISOString()\n        }\n      }\n    }];\n\n  case 'cancel_action':\n    return [{\n      json: {\n        action: 'action_cancelled',\n        chatId: chatId,\n        message: `👌 **Хорошо, ${userName}!**\n\nНичего страшного! Если передумаете - я всегда здесь. 😊\n\n🌿 **А пока могу помочь с маслами:**\n• Просто спросите про любое масло\n• Опишите своё настроение или проблему\n• Запросите музыкальные рекомендации\n• Напишите \"подписаться\" когда будете готовы\n\n💡 **Популярные запросы:**\n📝 \"лаванда\" - узнать про масло лаванды\n📝 \"стресс\" - рекомендации для снятия стресса\n📝 \"музыка для расслабления\" - получить плейлист`,\n        subscriptionData: {\n          actionCancelled: true,\n          cancelledAt: new Date().toISOString()\n        }\n      }\n    }];\n\n  default:\n    return [{\n      json: {\n        action: 'unknown_confirmation',\n        chatId: chatId,\n        message: `🤔 **Не совсем понял ваш запрос**\n\nЕсли хотите подписаться на уведомления:\n📝 **Напишите:** \"да, подписаться\"\n\nЕсли хотите узнать подробнее:\n📝 **Напишите:** \"расскажи подробнее\"\n\nИли просто спросите про любое эфирное масло! 🌿`,\n        subscriptionData: {\n          confirmationType: confirmationType,\n          originalPattern: matchedPattern,\n          needsManualReview: true\n        }\n      }\n    }];\n}\n\n// Логирование для аналитики\nconsole.log('📊 Subscription confirmation processed:', {\n  chatId: chatId,\n  confirmationType: confirmationType,\n  matchedPattern: matchedPattern,\n  userName: userName,\n  timestamp: new Date().toISOString()\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2064, -1056],
+      "id": "subscription-confirmation-handler",
+      "name": "Subscription Confirmation Handler"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "tableId": "subscribers",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "chat_id",
+              "fieldValue": "={{ $json.chatId }}"
+            },
+            {
+              "fieldId": "first_name",
+              "fieldValue": "={{ $json.userName }}"
+            },
+            {
+              "fieldId": "is_active",
+              "fieldValue": "={{ $json.subscriptionData.status === 'active' ? 'true' : 'false' }}"
+            },
+            {
+              "fieldId": "subscription_date",
+              "fieldValue": "={{ $json.subscriptionData.subscribedAt || new Date().toISOString() }}"
+            },
+            {
+              "fieldId": "preferences",
+              "fieldValue": "={{ JSON.stringify($json.subscriptionData.preferences || {}) }}"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ new Date().toISOString() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2288, -1296],
+      "id": "update-subscriber",
+      "name": "Update Subscriber",
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-credentials",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [2576, -1328],
+      "id": "telegram-subscription-response",
+      "name": "Telegram Subscription Response",
+      "webhookId": "subscription-webhook",
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-credentials",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [2528, -1056],
+      "id": "telegram-confirmation-response",
+      "name": "Telegram Confirmation Response",
+      "webhookId": "confirmation-webhook",
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-credentials",
+          "name": "Telegram Bot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "IF Subscription Inquiry": {
+      "main": [
+        [
+          {
+            "node": "Subscription Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subscription Handler": {
+      "main": [
+        [
+          {
+            "node": "Update Subscriber",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Subscriber": {
+      "main": [
+        [
+          {
+            "node": "Telegram Subscription Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Subscription Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Subscription Confirmation Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subscription Confirmation Handler": {
+      "main": [
+        [
+          {
+            "node": "Telegram Confirmation Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "subscription-system-v1",
+  "id": "subscription-system-workflow"
+} 

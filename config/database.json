@@ -1,0 +1,64 @@
+{
+  "supabase": {
+    "url": "YOUR_SUPABASE_URL",
+    "key": "YOUR_SUPABASE_ANON_KEY",
+    "service_key": "YOUR_SUPABASE_SERVICE_KEY"
+  },
+  "tables": {
+    "oils": {
+      "name": "oils",
+      "columns": [
+        "id",
+        "oil_name",
+        "description",
+        "emotional_effect",
+        "physical_effect",
+        "applications",
+        "safety_warning",
+        "joke",
+        "keywords",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    "subscribers": {
+      "name": "subscribers",
+      "columns": [
+        "id",
+        "chat_id",
+        "username",
+        "first_name",
+        "is_active",
+        "subscription_date",
+        "preferences",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    "user_interactions": {
+      "name": "user_interactions",
+      "columns": [
+        "id",
+        "chat_id",
+        "interaction_type",
+        "interaction_data",
+        "created_at"
+      ]
+    },
+    "admin_settings": {
+      "name": "admin_settings",
+      "columns": [
+        "id",
+        "chat_id",
+        "permissions",
+        "created_at",
+        "updated_at"
+      ]
+    }
+  },
+  "backup": {
+    "enabled": true,
+    "frequency": "daily",
+    "retention_days": 30
+  }
+} 

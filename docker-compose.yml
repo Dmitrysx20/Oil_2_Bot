@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  aroma-bot:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - aroma-network
+
+  # Опционально: Redis для кэширования
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - aroma-network
+
+volumes:
+  redis-data:
+
+networks:
+  aroma-network:
+    driver: bridge 

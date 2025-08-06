@@ -1,0 +1,453 @@
+{
+  "name": "Арома-Помощник - Основной бот",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message", "callback_query"],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [384, -144],
+      "id": "telegram-trigger",
+      "name": "Telegram Trigger",
+      "webhookId": "main-webhook",
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-credentials",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Умный роутер запросов\nconst input = $input.first();\n\nif (!input || !input.json) {\n  return [{\n    json: {\n      originalText: '',\n      requestType: 'error',\n      chatId: 'unknown',\n      error: 'No input data'\n    }\n  }];\n}\n\n// Обработка callback queries\nif (input.json.callback_query) {\n  const callbackData = input.json.callback_query.data || '';\n  const chatId = input.json.callback_query.message.chat.id;\n  const userName = input.json.callback_query.from.first_name || 'User';\n  \n  return [{\n    json: {\n      originalText: `callback:${callbackData}`,\n      requestType: 'callback_query',\n      chatId: chatId,\n      userName: userName,\n      callbackData: callbackData,\n      callbackQueryId: input.json.callback_query.id\n    }\n  }];\n}\n\n// Обработка обычных сообщений\nconst rawText = (input.json.message?.text || '').trim();\nconst chatId = input.json.message?.chat?.id || 'unknown';\nconst userName = input.json.message?.from?.first_name || 'User';\n\nif (!rawText) {\n  return [{\n    json: {\n      originalText: '',\n      requestType: 'empty_message',\n      chatId: chatId,\n      error: 'No text provided'\n    }\n  }];\n}\n\n// Нормализация текста\nconst normalizedText = rawText.toLowerCase()\n  .replace(/[.,!?;:()\\\"]/g, ' ')\n  .replace(/\\s+/g, ' ')\n  .trim();\n\n// Определение типа запроса\nlet requestType = 'unknown';\nlet oilName = null;\nlet mood = null;\nlet keywords = [];\n\n// Команды\nif (rawText.startsWith('/')) {\n  const command = rawText.split(' ')[0];\n  switch (command) {\n    case '/start':\n      requestType = 'start_command';\n      break;\n    case '/help':\n      requestType = 'help_command';\n      break;\n    case '/menu':\n      requestType = 'menu_command';\n      break;\n    default:\n      requestType = 'unknown_command';\n  }\n}\n// Поиск масел\nelse if (/лаванда|эвкалипт|мята|лимон|апельсин|роза|жасмин|чайное дерево|розмарин/.test(normalizedText)) {\n  requestType = 'oil_search';\n  oilName = rawText;\n}\n// Настроения\nelse if (/стресс|устал|грустн|бессонница|энергии|спокойствие|радость/.test(normalizedText)) {\n  requestType = 'mood_request';\n  mood = rawText;\n  keywords = ['настроение', 'эмоции'];\n}\n// Подписки\nelse if (/подпис|уведомлен|рассылк/.test(normalizedText)) {\n  requestType = 'subscription_inquiry';\n  keywords = ['подписка'];\n}\n// Музыка\nelse if (/музыка|песня|плейлист|послушать/.test(normalizedText)) {\n  requestType = 'music_request';\n  keywords = ['музыка'];\n}\n// Приветствия\nelse if (/привет|здравствуй|добр/.test(normalizedText)) {\n  requestType = 'greeting';\n}\n\nreturn [{\n  json: {\n    originalText: rawText,\n    normalizedText: normalizedText,\n    requestType: requestType,\n    chatId: chatId,\n    userName: userName,\n    oilName: oilName,\n    mood: mood,\n    keywords: keywords,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, -144],
+      "id": "smart-router",
+      "name": "Smart Router"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "start-condition",
+              "leftValue": "={{ $json.requestType }}",
+              "rightValue": "start_command",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1280, -144],
+      "id": "if-start-command",
+      "name": "IF Start Command"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "oil-search-condition",
+              "leftValue": "={{ $json.requestType }}",
+              "rightValue": "oil_search",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1280, -80],
+      "id": "if-oil-search",
+      "name": "IF Oil Search"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "mood-condition",
+              "leftValue": "={{ $json.requestType }}",
+              "rightValue": "mood_request",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1280, -16],
+      "id": "if-mood-request",
+      "name": "IF Mood Request"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "🌿 **Привет! Я твой Арома-помощник!** 🌿\n\n✨ **Что я умею:**\n\n🔍 **Рассказать про любое масло:**\n- Просто напиши: \"мята\", \"лаванда\", \"лимон\"\n- Или: \"расскажи про эвкалипт\"\n\n🤖 **Дать научные рекомендации:**\n- \"нужна энергия\" → рекомендации с исследованиями\n- \"хочу расслабиться\" → советы экспертов\n- \"простуда\" → актуальные данные о лечении\n\nПросто напиши что тебя интересует! 😊",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🏠 Главное меню",
+                    "additionalFields": {
+                      "callback_data": "main_menu"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1472, -336],
+      "id": "start-response",
+      "name": "Start Response",
+      "webhookId": "start-webhook",
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-credentials",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "oils",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "oil_name",
+              "condition": "ilike",
+              "keyValue": "=%{{ $json.oilName }}%"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1728, -240],
+      "id": "supabase-oil-search",
+      "name": "Supabase Oil Search",
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-credentials",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Обработка результатов поиска масла\nconst supabaseResults = $input.all();\nconst smartRouterData = $('Smart Router').first().json;\n\nif (!Array.isArray(supabaseResults) || supabaseResults.length === 0) {\n  return [{\n    json: {\n      error: \"Масло не найдено\",\n      searchedName: smartRouterData.oilName,\n      chatId: smartRouterData.chatId,\n      suggestions: [\n        'Попробуй: \"Лаванда\" - для спокойствия',\n        'Попробуй: \"Мята перечная\" - для энергии',\n        'Попробуй: \"Лимон\" - для настроения'\n      ]\n    }\n  }];\n}\n\nconst foundOil = supabaseResults[0].json;\n\nreturn [{\n  json: {\n    oil_name: foundOil.oil_name,\n    description: foundOil.description,\n    emotional_effect: foundOil.emotional_effect,\n    physical_effect: foundOil.physical_effect,\n    applications: foundOil.applications,\n    safety_warning: foundOil.safety_warning,\n    joke: foundOil.joke,\n    keywords: foundOil.keywords,\n    chatId: smartRouterData.chatId\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1984, -288],
+      "id": "oil-response-formatter",
+      "name": "Oil Response Formatter"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{(() => {\n  if ($json.error) {\n    const suggestions = $json.suggestions || [];\n    const searchedName = $json.searchedName || 'неизвестное масло';\n    \n    let message = `🔍 Не нашел масло \"${searchedName}\".\\n\\n`;\n    \n    if (suggestions.length > 0) {\n      message += `💡 Возможно, ты искал:\\n`;\n      suggestions.slice(0, 5).forEach(suggestion => {\n        message += `• ${suggestion}\\n`;\n      });\n      message += '\\n';\n    }\n    \n    message += `🎯 Как правильно искать:\\n`;\n    message += `• Просто название: \"лаванда\", \"мята\"\\n`;\n    message += `• С командой: \"расскажи про эвкалипт\"\\n`;\n    message += `• По эффекту: \"нужна энергия\", \"хочу расслабиться\"`;\n    \n    return message;\n  }\n  \n  let message = `🌿 ${$json.oil_name}\\n${$json.description}\\n\\n`;\n  message += `🧠 Эмоциональный эффект:\\n${$json.emotional_effect}\\n\\n`;\n  message += `💪 Физический эффект:\\n${$json.physical_effect}\\n\\n`;\n  message += `🧴 Применение:\\n${$json.applications}\\n\\n`;\n  message += `⚠️ Осторожно:\\n${$json.safety_warning}\\n\\n`;\n  \n  if ($json.keywords) {\n    message += `🏷️ Ключевые свойства: ${$json.keywords}\\n\\n`;\n  }\n  \n  message += `😄 Кстати:\\n${$json.joke}`;\n  \n  return message;\n})()}}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🏠 Главное меню",
+                    "additionalFields": {
+                      "callback_data": "main_menu"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [2240, -320],
+      "id": "telegram-oil-response",
+      "name": "Telegram Oil Response",
+      "webhookId": "oil-response-webhook",
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-credentials",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "oils"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1728, -80],
+      "id": "get-all-oils",
+      "name": "Get All Oils",
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-credentials",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [2944, 64],
+      "id": "openai-model",
+      "name": "OpenAI Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-credentials",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Ты опытный ароматерапевт, предоставляющий быстрые практические советы.\n\n🇷🇺 КРИТИЧЕСКИ ВАЖНО: Отвечай ТОЛЬКО на русском языке!\n\n📋 ЗАПРОС ПОЛЬЗОВАТЕЛЯ: {{ $json.originalText }}\n🎯 НАСТРОЕНИЕ: {{ $json.mood }}\n🔍 КЛЮЧЕВЫЕ СЛОВА: {{ $json.keywords ? $json.keywords.join(\", \") : \"не указаны\" }}\n\n📚 ДОСТУПНЫЕ МАСЛА ИЗ БАЗЫ ДАННЫХ:\n{{ $json.oilsData ? $json.oilsData.slice(0, 12).map(oil => `- **${oil.json.oil_name}**: ${oil.json.applications || 'информация недоступна'}`).join('\\n') : 'Данные о маслах недоступны' }}\n\n🚨 ТРЕБОВАНИЯ К ОТВЕТУ:\n- Используй конкретные масла из базы выше\n- Указывай точные дозировки в каплях\n- Давай четкие пошаговые инструкции\n- Включай готовые рецепты\n- Делай ответ практичным и применимым\n\n🇷🇺 ФОРМАТ БЫСТРОГО РУССКОГО ОТВЕТА:\n\n🎯 **Для {{ $json.mood || \"вашего запроса\" }}** быстро рекомендую:\n\n🌿 **[НАЗВАНИЕ МАСЛА ИЗ БАЗЫ]** \n💡 **ПРИМЕНЕНИЕ:**\n   • **Основной способ:** [дозировка в каплях] + [базовое масло], [как применять]\n   • **Альтернатива:** [другой способ с дозировкой]\n   • **Частота:** [сколько раз в день]\n\n🧴 **БЫСТРЫЕ РЕЦЕПТЫ:**\n\n**⚡ Для немедленного использования:**\n- [Масло 1]: X капель\n- [Масло 2]: Y капель\n- Базовое масло: Z мл\n- **Как применять:** [простые шаги]\n\n⏰ **БЫСТРЫЙ ПЛАН:**\n🌅 **Сейчас:** [что сделать немедленно]\n🌆 **Ежедневно:** [простая рутина]\n\n⚠️ **ОСНОВНЫЕ МЕРЫ БЕЗОПАСНОСТИ:**\n- Всегда разбавлять базовым маслом\n- Тест на чувствительность\n- Не применять на слизистых\n\n❌ БЕЗ: сложных объяснений, длинных списков\n⚡ ГЛАВНОЕ: быстрые, конкретные, применимые советы\n🇷🇺 ЯЗЫК: только русский!",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [2960, -208],
+      "id": "ai-agent-fast",
+      "name": "AI Agent Fast"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.output }}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🏠 Главное меню",
+                    "additionalFields": {
+                      "callback_data": "main_menu"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [3424, -176],
+      "id": "telegram-ai-response",
+      "name": "Telegram AI Response",
+      "webhookId": "ai-response-webhook",
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-credentials",
+          "name": "Telegram Bot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Smart Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Smart Router": {
+      "main": [
+        [
+          {
+            "node": "IF Start Command",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF Oil Search",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF Mood Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Start Command": {
+      "main": [
+        [
+          {
+            "node": "Start Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Oil Search": {
+      "main": [
+        [
+          {
+            "node": "Supabase Oil Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Oil Search": {
+      "main": [
+        [
+          {
+            "node": "Oil Response Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Oil Response Formatter": {
+      "main": [
+        [
+          {
+            "node": "Telegram Oil Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Mood Request": {
+      "main": [
+        [
+          {
+            "node": "Get All Oils",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Oils": {
+      "main": [
+        [
+          {
+            "node": "AI Agent Fast",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Fast",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Fast": {
+      "main": [
+        [
+          {
+            "node": "Telegram AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "main-bot-v1",
+  "id": "main-bot-workflow"
+} 
