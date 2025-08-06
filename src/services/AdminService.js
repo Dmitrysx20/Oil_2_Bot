@@ -1,9 +1,11 @@
 const logger = require('../utils/logger');
 const config = require('../../config');
+const AdminSettingsService = require('./AdminSettingsService');
 
 class AdminService {
   constructor() {
     this.adminChatIds = config.admin.chatIds;
+    this.adminSettingsService = new AdminSettingsService();
   }
 
   async checkAdminAccess(chatId) {
@@ -92,6 +94,24 @@ class AdminService {
       case 'admin_export':
         return this.generateExportMenu(chatId);
         
+      case 'admin_settings':
+        return await this.generateSettingsPanel(chatId);
+        
+      case 'admin_maintenance_toggle':
+        return await this.toggleMaintenanceMode(chatId);
+        
+      case 'admin_daily_stats_toggle':
+        return await this.toggleDailyStats(chatId);
+        
+      case 'admin_broadcast_toggle':
+        return await this.toggleBroadcastEnabled(chatId);
+        
+      case 'admin_error_notifications_toggle':
+        return await this.toggleErrorNotifications(chatId);
+        
+      case 'admin_new_user_notifications_toggle':
+        return await this.toggleNewUserNotifications(chatId);
+        
       default:
         return this.getUnknownCommandResponse(chatId);
     }
@@ -112,15 +132,11 @@ class AdminService {
       ],
       [
         { text: '📢 Рассылки', callback_data: 'admin_broadcast' },
-        { text: '🔔 Уведомления', callback_data: 'admin_notifications' }
+        { text: '⚙️ Настройки', callback_data: 'admin_settings' }
       ],
       [
         { text: '🎵 Музыка', callback_data: 'admin_music' },
-        { text: '💡 Рекомендации', callback_data: 'admin_recommendations' }
-      ],
-      [
-        { text: '💾 Экспорт данных', callback_data: 'admin_export' },
-        { text: '⚙️ Настройки бота', callback_data: 'admin_settings' }
+        { text: '💾 Экспорт данных', callback_data: 'admin_export' }
       ],
       [{ text: '🚪 Выход', callback_data: 'main_menu' }]
     ];
@@ -382,6 +398,209 @@ class AdminService {
         [{ text: '🛡️ Админ-панель', callback_data: 'admin_panel' }]
       ]
     };
+  }
+
+  // ===== НОВЫЕ МЕТОДЫ ДЛЯ АДМИНСКИХ НАСТРОЕК =====
+
+  async generateSettingsPanel(chatId) {
+    try {
+      const settings = await this.adminSettingsService.getAdminSettings(chatId);
+      
+      if (!settings) {
+        // Инициализируем настройки если их нет
+        await this.adminSettingsService.initializeAdminSettings(chatId);
+        const newSettings = await this.adminSettingsService.getAdminSettings(chatId);
+        return this.buildSettingsPanel(chatId, newSettings);
+      }
+
+      return this.buildSettingsPanel(chatId, settings);
+
+    } catch (error) {
+      logger.error('Settings panel generation error:', error);
+      return this.getErrorResponse(chatId);
+    }
+  }
+
+  buildSettingsPanel(chatId, settings) {
+    const botSettings = settings.bot_settings || {};
+    const dailyStats = settings.daily_stats || {};
+
+    const message = `⚙️ **Настройки бота**
+
+🔧 **Основные настройки:**
+${botSettings.maintenance_mode ? '🔴' : '🟢'} Режим обслуживания: ${botSettings.maintenance_mode ? 'ВКЛ' : 'ВЫКЛ'}
+${botSettings.daily_stats ? '🟢' : '🔴'} Ежедневная статистика: ${botSettings.daily_stats ? 'ВКЛ' : 'ВЫКЛ'}
+${botSettings.broadcast_enabled ? '🟢' : '🔴'} Рассылки: ${botSettings.broadcast_enabled ? 'ВКЛ' : 'ВЫКЛ'}
+${botSettings.error_notifications ? '🟢' : '🔴'} Уведомления об ошибках: ${botSettings.error_notifications ? 'ВКЛ' : 'ВЫКЛ'}
+${botSettings.new_user_notifications ? '🟢' : '🔴'} Уведомления о новых пользователях: ${botSettings.new_user_notifications ? 'ВКЛ' : 'ВЫКЛ'}
+
+📊 **Сегодняшняя статистика:**
+❌ Ошибки: ${dailyStats.errors || 0}
+👥 Новые пользователи: ${dailyStats.new_users || 0}
+✅ Активные пользователи: ${dailyStats.active_users || 0}
+📨 Отправлено сообщений: ${dailyStats.messages_sent || 0}
+🕐 Последнее обновление: ${dailyStats.last_updated ? new Date(dailyStats.last_updated).toLocaleString('ru-RU') : 'Не обновлялось'}
+
+Выберите настройку для изменения:`;
+
+    const keyboard = [
+      [
+        { text: `${botSettings.maintenance_mode ? '🔴' : '🟢'} Режим обслуживания`, callback_data: 'admin_maintenance_toggle' },
+        { text: `${botSettings.daily_stats ? '🟢' : '🔴'} Ежедневная статистика`, callback_data: 'admin_daily_stats_toggle' }
+      ],
+      [
+        { text: `${botSettings.broadcast_enabled ? '🟢' : '🔴'} Рассылки`, callback_data: 'admin_broadcast_toggle' },
+        { text: `${botSettings.error_notifications ? '🟢' : '🔴'} Ошибки`, callback_data: 'admin_error_notifications_toggle' }
+      ],
+      [
+        { text: `${botSettings.new_user_notifications ? '🟢' : '🔴'} Новые пользователи`, callback_data: 'admin_new_user_notifications_toggle' }
+      ],
+      [{ text: '🏠 Админ-панель', callback_data: 'admin_panel' }]
+    ];
+
+    return {
+      action: 'admin_settings_panel',
+      chatId: chatId,
+      message: message,
+      keyboard: keyboard
+    };
+  }
+
+  async toggleMaintenanceMode(chatId) {
+    try {
+      const currentMode = await this.adminSettingsService.isMaintenanceMode(chatId);
+      const newMode = !currentMode;
+      
+      await this.adminSettingsService.setMaintenanceMode(chatId, newMode);
+      
+      const message = `🔧 **Режим обслуживания ${newMode ? 'ВКЛЮЧЕН' : 'ВЫКЛЮЧЕН'}**
+
+${newMode ? '🔴 Бот переведен в режим обслуживания. Пользователи будут получать уведомление о временной недоступности.' : '🟢 Бот снова доступен для пользователей.'}
+
+${newMode ? '⚠️ В режиме обслуживания бот будет отвечать только администраторам.' : '✅ Все функции бота восстановлены.'}`;
+
+      return {
+        action: 'maintenance_mode_toggled',
+        chatId: chatId,
+        message: message,
+        keyboard: [
+          [{ text: '⚙️ Настройки', callback_data: 'admin_settings' }],
+          [{ text: '🏠 Админ-панель', callback_data: 'admin_panel' }]
+        ]
+      };
+
+    } catch (error) {
+      logger.error('Toggle maintenance mode error:', error);
+      return this.getErrorResponse(chatId);
+    }
+  }
+
+  async toggleDailyStats(chatId) {
+    try {
+      const currentSetting = await this.adminSettingsService.shouldSendDailyStats(chatId);
+      const newSetting = !currentSetting;
+      
+      await this.adminSettingsService.toggleDailyStats(chatId, newSetting);
+      
+      const message = `📊 **Ежедневная статистика ${newSetting ? 'ВКЛЮЧЕНА' : 'ВЫКЛЮЧЕНА'}**
+
+${newSetting ? '🟢 Вы будете получать ежедневные отчеты о работе бота.' : '🔴 Ежедневные отчеты отключены.'}`;
+
+      return {
+        action: 'daily_stats_toggled',
+        chatId: chatId,
+        message: message,
+        keyboard: [
+          [{ text: '⚙️ Настройки', callback_data: 'admin_settings' }],
+          [{ text: '🏠 Админ-панель', callback_data: 'admin_panel' }]
+        ]
+      };
+
+    } catch (error) {
+      logger.error('Toggle daily stats error:', error);
+      return this.getErrorResponse(chatId);
+    }
+  }
+
+  async toggleBroadcastEnabled(chatId) {
+    try {
+      const currentSetting = await this.adminSettingsService.isBroadcastEnabled(chatId);
+      const newSetting = !currentSetting;
+      
+      await this.adminSettingsService.toggleBroadcastEnabled(chatId, newSetting);
+      
+      const message = `📢 **Рассылки ${newSetting ? 'ВКЛЮЧЕНЫ' : 'ВЫКЛЮЧЕНЫ'}**
+
+${newSetting ? '🟢 Вы можете отправлять рассылки пользователям.' : '🔴 Функция рассылок отключена.'}`;
+
+      return {
+        action: 'broadcast_toggled',
+        chatId: chatId,
+        message: message,
+        keyboard: [
+          [{ text: '⚙️ Настройки', callback_data: 'admin_settings' }],
+          [{ text: '🏠 Админ-панель', callback_data: 'admin_panel' }]
+        ]
+      };
+
+    } catch (error) {
+      logger.error('Toggle broadcast enabled error:', error);
+      return this.getErrorResponse(chatId);
+    }
+  }
+
+  async toggleErrorNotifications(chatId) {
+    try {
+      const currentSetting = await this.adminSettingsService.shouldSendErrorNotifications(chatId);
+      const newSetting = !currentSetting;
+      
+      await this.adminSettingsService.toggleErrorNotifications(chatId, newSetting);
+      
+      const message = `⚠️ **Уведомления об ошибках ${newSetting ? 'ВКЛЮЧЕНЫ' : 'ВЫКЛЮЧЕНЫ'}**
+
+${newSetting ? '🟢 Вы будете получать уведомления о критических ошибках.' : '🔴 Уведомления об ошибках отключены.'}`;
+
+      return {
+        action: 'error_notifications_toggled',
+        chatId: chatId,
+        message: message,
+        keyboard: [
+          [{ text: '⚙️ Настройки', callback_data: 'admin_settings' }],
+          [{ text: '🏠 Админ-панель', callback_data: 'admin_panel' }]
+        ]
+      };
+
+    } catch (error) {
+      logger.error('Toggle error notifications error:', error);
+      return this.getErrorResponse(chatId);
+    }
+  }
+
+  async toggleNewUserNotifications(chatId) {
+    try {
+      const currentSetting = await this.adminSettingsService.shouldSendNewUserNotifications(chatId);
+      const newSetting = !currentSetting;
+      
+      await this.adminSettingsService.toggleNewUserNotifications(chatId, newSetting);
+      
+      const message = `👥 **Уведомления о новых пользователях ${newSetting ? 'ВКЛЮЧЕНЫ' : 'ВЫКЛЮЧЕНЫ'}**
+
+${newSetting ? '🟢 Вы будете получать уведомления о новых подписчиках.' : '🔴 Уведомления о новых пользователях отключены.'}`;
+
+      return {
+        action: 'new_user_notifications_toggled',
+        chatId: chatId,
+        message: message,
+        keyboard: [
+          [{ text: '⚙️ Настройки', callback_data: 'admin_settings' }],
+          [{ text: '🏠 Админ-панель', callback_data: 'admin_panel' }]
+        ]
+      };
+
+    } catch (error) {
+      logger.error('Toggle new user notifications error:', error);
+      return this.getErrorResponse(chatId);
+    }
   }
 }
 
