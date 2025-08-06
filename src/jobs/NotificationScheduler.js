@@ -22,6 +22,11 @@ class NotificationScheduler {
       this.scheduleWeeklyNotifications();
       this.scheduleDailyHealthCheck();
       this.scheduleMonthlyStats();
+      
+      // Запускаем задачи для опросников
+      this.scheduleMorningSurveys();
+      this.scheduleEveningSurveys();
+      this.scheduleWeeklySurveys();
 
       this.isRunning = true;
       logger.info('✅ Notification Scheduler started successfully');
@@ -113,6 +118,66 @@ class NotificationScheduler {
     }
   }
 
+  scheduleMorningSurveys() {
+    try {
+      // Утренние опросники каждый день в 9:00
+      const morningJob = cron.schedule('0 9 * * *', async () => {
+        logger.info('🌅 Running morning surveys job');
+        await this.sendMorningSurveys();
+      }, {
+        scheduled: false,
+        timezone: 'Europe/Moscow'
+      });
+
+      morningJob.start();
+      this.jobs.set('morning_surveys', morningJob);
+      logger.info('🌅 Morning surveys scheduled (9:00 daily)');
+
+    } catch (error) {
+      logger.error('❌ Failed to schedule morning surveys:', error);
+    }
+  }
+
+  scheduleEveningSurveys() {
+    try {
+      // Вечерние опросники каждый день в 20:00
+      const eveningJob = cron.schedule('0 20 * * *', async () => {
+        logger.info('🌙 Running evening surveys job');
+        await this.sendEveningSurveys();
+      }, {
+        scheduled: false,
+        timezone: 'Europe/Moscow'
+      });
+
+      eveningJob.start();
+      this.jobs.set('evening_surveys', eveningJob);
+      logger.info('🌙 Evening surveys scheduled (20:00 daily)');
+
+    } catch (error) {
+      logger.error('❌ Failed to schedule evening surveys:', error);
+    }
+  }
+
+  scheduleWeeklySurveys() {
+    try {
+      // Еженедельные опросники по воскресеньям в 18:00
+      const weeklyJob = cron.schedule('0 18 * * 0', async () => {
+        logger.info('📅 Running weekly surveys job');
+        await this.sendWeeklySurveys();
+      }, {
+        scheduled: false,
+        timezone: 'Europe/Moscow'
+      });
+
+      weeklyJob.start();
+      this.jobs.set('weekly_surveys', weeklyJob);
+      logger.info('📅 Weekly surveys scheduled (Sunday 18:00)');
+
+    } catch (error) {
+      logger.error('❌ Failed to schedule weekly surveys:', error);
+    }
+  }
+
   async sendWeeklyNotifications() {
     try {
       logger.info('📧 Starting weekly notifications...');
@@ -171,6 +236,180 @@ class NotificationScheduler {
 
     } catch (error) {
       logger.error('❌ Error in weekly notifications:', error);
+    }
+  }
+
+  async sendMorningSurveys() {
+    try {
+      logger.info('🌅 Starting morning surveys...');
+
+      const SurveyService = require('../services/SurveyService');
+      const surveyService = new SurveyService();
+
+      // Получаем список активных подписчиков
+      const subscribers = await this.subscriptionService.getActiveSubscribers();
+      
+      if (!subscribers || subscribers.length === 0) {
+        logger.info('No active subscribers for morning surveys');
+        return;
+      }
+
+      logger.info(`Sending morning surveys to ${subscribers.length} subscribers`);
+
+      let successCount = 0;
+      let errorCount = 0;
+      const errors = [];
+
+      for (const subscriber of subscribers) {
+        try {
+          const result = await surveyService.sendMorningSurvey(subscriber.chatId);
+          
+          if (result && result.success) {
+            successCount++;
+            logger.debug(`✅ Morning survey sent to ${subscriber.chatId}`);
+          } else {
+            errorCount++;
+            errors.push(`Failed to send to ${subscriber.chatId}: ${result?.error || 'Unknown error'}`);
+          }
+          
+          // Задержка между отправками
+          await this.delay(200);
+          
+        } catch (error) {
+          logger.error(`Failed to send morning survey to ${subscriber.chatId}:`, error);
+          errorCount++;
+          errors.push(`Error sending to ${subscriber.chatId}: ${error.message}`);
+        }
+      }
+
+      logger.info(`🌅 Morning surveys completed: ${successCount} success, ${errorCount} errors`);
+
+      // Отправляем отчет администраторам
+      await this.sendAdminReport('morning_surveys', {
+        totalSubscribers: subscribers.length,
+        successCount,
+        errorCount,
+        errors: errors.slice(0, 10) // Показываем только первые 10 ошибок
+      });
+
+    } catch (error) {
+      logger.error('❌ Error in morning surveys:', error);
+    }
+  }
+
+  async sendEveningSurveys() {
+    try {
+      logger.info('🌙 Starting evening surveys...');
+
+      const SurveyService = require('../services/SurveyService');
+      const surveyService = new SurveyService();
+
+      // Получаем список активных подписчиков
+      const subscribers = await this.subscriptionService.getActiveSubscribers();
+      
+      if (!subscribers || subscribers.length === 0) {
+        logger.info('No active subscribers for evening surveys');
+        return;
+      }
+
+      logger.info(`Sending evening surveys to ${subscribers.length} subscribers`);
+
+      let successCount = 0;
+      let errorCount = 0;
+      const errors = [];
+
+      for (const subscriber of subscribers) {
+        try {
+          const result = await surveyService.sendEveningSurvey(subscriber.chatId);
+          
+          if (result && result.success) {
+            successCount++;
+            logger.debug(`✅ Evening survey sent to ${subscriber.chatId}`);
+          } else {
+            errorCount++;
+            errors.push(`Failed to send to ${subscriber.chatId}: ${result?.error || 'Unknown error'}`);
+          }
+          
+          // Задержка между отправками
+          await this.delay(200);
+          
+        } catch (error) {
+          logger.error(`Failed to send evening survey to ${subscriber.chatId}:`, error);
+          errorCount++;
+          errors.push(`Error sending to ${subscriber.chatId}: ${error.message}`);
+        }
+      }
+
+      logger.info(`🌙 Evening surveys completed: ${successCount} success, ${errorCount} errors`);
+
+      // Отправляем отчет администраторам
+      await this.sendAdminReport('evening_surveys', {
+        totalSubscribers: subscribers.length,
+        successCount,
+        errorCount,
+        errors: errors.slice(0, 10)
+      });
+
+    } catch (error) {
+      logger.error('❌ Error in evening surveys:', error);
+    }
+  }
+
+  async sendWeeklySurveys() {
+    try {
+      logger.info('📅 Starting weekly surveys...');
+
+      const SurveyService = require('../services/SurveyService');
+      const surveyService = new SurveyService();
+
+      // Получаем список активных подписчиков
+      const subscribers = await this.subscriptionService.getActiveSubscribers();
+      
+      if (!subscribers || subscribers.length === 0) {
+        logger.info('No active subscribers for weekly surveys');
+        return;
+      }
+
+      logger.info(`Sending weekly surveys to ${subscribers.length} subscribers`);
+
+      let successCount = 0;
+      let errorCount = 0;
+      const errors = [];
+
+      for (const subscriber of subscribers) {
+        try {
+          const result = await surveyService.sendWeeklySurvey(subscriber.chatId);
+          
+          if (result && result.success) {
+            successCount++;
+            logger.debug(`✅ Weekly survey sent to ${subscriber.chatId}`);
+          } else {
+            errorCount++;
+            errors.push(`Failed to send to ${subscriber.chatId}: ${result?.error || 'Unknown error'}`);
+          }
+          
+          // Задержка между отправками
+          await this.delay(200);
+          
+        } catch (error) {
+          logger.error(`Failed to send weekly survey to ${subscriber.chatId}:`, error);
+          errorCount++;
+          errors.push(`Error sending to ${subscriber.chatId}: ${error.message}`);
+        }
+      }
+
+      logger.info(`📅 Weekly surveys completed: ${successCount} success, ${errorCount} errors`);
+
+      // Отправляем отчет администраторам
+      await this.sendAdminReport('weekly_surveys', {
+        totalSubscribers: subscribers.length,
+        successCount,
+        errorCount,
+        errors: errors.slice(0, 10)
+      });
+
+    } catch (error) {
+      logger.error('❌ Error in weekly surveys:', error);
     }
   }
 
@@ -341,6 +580,30 @@ class NotificationScheduler {
                `🆕 Новых масел: ${data.newOilsCount}\n` +
                `📚 Статей: ${data.articlesCount}`;
 
+      case 'morning_surveys':
+        return `🌅 **Отчет об утренних опросниках**\n\n` +
+               `📅 Время: ${timestamp}\n` +
+               `👥 Всего подписчиков: ${data.totalSubscribers}\n` +
+               `✅ Успешно отправлено: ${data.successCount}\n` +
+               `❌ Ошибок: ${data.errorCount}\n` +
+               `📊 Процент успеха: ${data.totalSubscribers > 0 ? Math.round((data.successCount / data.totalSubscribers) * 100) : 0}%`;
+
+      case 'evening_surveys':
+        return `🌙 **Отчет о вечерних опросниках**\n\n` +
+               `📅 Время: ${timestamp}\n` +
+               `👥 Всего подписчиков: ${data.totalSubscribers}\n` +
+               `✅ Успешно отправлено: ${data.successCount}\n` +
+               `❌ Ошибок: ${data.errorCount}\n` +
+               `📊 Процент успеха: ${data.totalSubscribers > 0 ? Math.round((data.successCount / data.totalSubscribers) * 100) : 0}%`;
+
+      case 'weekly_surveys':
+        return `📅 **Отчет о еженедельных опросниках**\n\n` +
+               `📅 Время: ${timestamp}\n` +
+               `👥 Всего подписчиков: ${data.totalSubscribers}\n` +
+               `✅ Успешно отправлено: ${data.successCount}\n` +
+               `❌ Ошибок: ${data.errorCount}\n` +
+               `📊 Процент успеха: ${data.totalSubscribers > 0 ? Math.round((data.successCount / data.totalSubscribers) * 100) : 0}%`;
+
       case 'health_check':
         return `🏥 **Отчет о состоянии системы**\n\n` +
                `📅 Время: ${timestamp}\n` +
@@ -381,11 +644,50 @@ class NotificationScheduler {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  // Методы для ручного запуска опросников (для тестирования)
+  async runMorningSurveysNow() {
+    logger.info('🌅 Manually running morning surveys...');
+    await this.sendMorningSurveys();
+  }
+
+  async runEveningSurveysNow() {
+    logger.info('🌙 Manually running evening surveys...');
+    await this.sendEveningSurveys();
+  }
+
+  async runWeeklySurveysNow() {
+    logger.info('📅 Manually running weekly surveys...');
+    await this.sendWeeklySurveys();
+  }
+
+  async runAllSurveysNow() {
+    logger.info('📊 Manually running all surveys...');
+    await this.sendMorningSurveys();
+    await this.delay(1000);
+    await this.sendEveningSurveys();
+    await this.delay(1000);
+    await this.sendWeeklySurveys();
+  }
+
   getStatus() {
+    const activeJobs = Array.from(this.jobs.keys());
+    const surveyJobs = activeJobs.filter(job => job.includes('survey'));
+    const notificationJobs = activeJobs.filter(job => !job.includes('survey'));
+    
     return {
       isRunning: this.isRunning,
-      activeJobs: Array.from(this.jobs.keys()),
-      jobCount: this.jobs.size
+      activeJobs: activeJobs,
+      jobCount: this.jobs.size,
+      surveyJobs: surveyJobs,
+      notificationJobs: notificationJobs,
+      scheduledTasks: {
+        morningSurveys: '9:00 daily',
+        eveningSurveys: '20:00 daily', 
+        weeklySurveys: 'Sunday 18:00',
+        weeklyNotifications: 'Mon, Thu 10:00',
+        healthCheck: '6:00 daily',
+        monthlyStats: '1st of month 9:00'
+      }
     };
   }
 }

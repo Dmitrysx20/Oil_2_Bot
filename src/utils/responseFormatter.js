@@ -92,6 +92,33 @@ class ResponseFormatter {
     return { message, keyboard };
   }
 
+  static formatMusicRecommendation(musicData) {
+    if (!musicData) {
+      return '🎵 К сожалению, не удалось найти подходящую музыку. Попробуйте позже.';
+    }
+
+    const { mood, tracks, recommendedOils } = musicData;
+    
+    let message = `🎵 **Музыка для настроения "${mood}"**\n\n`;
+    
+    if (tracks && tracks.length > 0) {
+      message += `🎧 **Рекомендуемые треки:**\n`;
+      tracks.slice(0, 3).forEach((track, index) => {
+        message += `${index + 1}. **"${track.title}"** - ${track.artist}\n`;
+      });
+      message += `\n`;
+    }
+    
+    if (recommendedOils && recommendedOils.length > 0) {
+      message += `🌿 **Идеальные масла для этого настроения:**\n`;
+      message += `${recommendedOils.join(', ')}\n\n`;
+    }
+    
+    message += `💡 **Совет:** Создайте атмосферу с помощью аромалампы и подходящего масла!`;
+    
+    return message;
+  }
+
   static formatSubscriptionResponse(subscriptionData) {
     const { action, status } = subscriptionData;
     
