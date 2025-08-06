@@ -16,6 +16,18 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Test endpoint для отладки
+app.get('/test', (req, res) => {
+  res.json({
+    message: 'Приложение работает!',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    webhook_enabled: process.env.ENABLE_WEBHOOK === 'true',
+    webhook_url: process.env.WEBHOOK_URL || 'не настроен',
+    telegram_token: process.env.TELEGRAM_BOT_TOKEN ? 'настроен' : 'не настроен'
+  });
+});
+
 // Обработка ошибок для health check
 app.use((error, req, res, next) => {
   if (req.path === '/health') {
