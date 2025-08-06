@@ -141,21 +141,26 @@ try {
           
           let responseMessage = '';
           
-          if (text.toLowerCase().includes('лаванда')) {
-            responseMessage = `🌿 **Лаванда** - одно из самых популярных эфирных масел!
+          // Проверяем, является ли это запросом конкретного масла
+          const oilKeywords = ['лаванда', 'мята', 'лимон', 'апельсин', 'розмарин', 'эвкалипт', 'чайное дерево', 'ромашка', 'бергамот', 'иланг-иланг'];
+          const isOilRequest = oilKeywords.some(keyword => text.toLowerCase().includes(keyword));
+          
+          if (isOilRequest) {
+            // Используем OilSearchService для поиска масла
+            try {
+              const oilSearchService = new (require('./src/services/OilSearchService'))();
+              const searchResult = await oilSearchService.searchDirectOil({
+                normalizedOilName: text.toLowerCase(),
+                chatId: chatId
+              });
+              
+              responseMessage = searchResult.message;
+            } catch (error) {
+              console.error('Oil search error:', error);
+              responseMessage = `🌿 **${text}** - эфирное масло
 
-**Свойства:**
-• Успокаивающее и расслабляющее
-• Помогает при бессоннице
-• Снимает стресс и тревогу
-• Обладает антисептическими свойствами
-
-**Применение:**
-• Ароматерапия: 2-3 капли в аромалампу
-• Ванна: 5-10 капель с морской солью
-• Массаж: 2-3 капли с базовым маслом
-
-💡 **Совет:** Лаванда отлично сочетается с ромашкой для усиления успокаивающего эффекта.`;
+К сожалению, у меня пока нет подробной информации об этом масле в базе данных. Попробуйте спросить о других маслах или используйте команду /start для справки.`;
+            }
           } else if (text.toLowerCase().includes('энергия') || text.toLowerCase().includes('бодрость')) {
             responseMessage = `⚡ **Масла для энергии и бодрости:**
 

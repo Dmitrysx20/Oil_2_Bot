@@ -1,8 +1,24 @@
 const logger = require('../utils/logger');
+const { createClient } = require('@supabase/supabase-js');
+const config = require('../../config');
 
 class OilSearchService {
   constructor() {
-    // Заглушка для сервиса поиска масел
+    this.supabase = null;
+    this.initSupabase();
+  }
+
+  initSupabase() {
+    try {
+      if (config.supabase.url && config.supabase.key) {
+        this.supabase = createClient(config.supabase.url, config.supabase.key);
+        logger.info('✅ Supabase client initialized');
+      } else {
+        logger.warn('⚠️ Supabase credentials not found, using mock data');
+      }
+    } catch (error) {
+      logger.error('❌ Failed to initialize Supabase:', error);
+    }
   }
 
   async searchDirectOil(routingResult) {
@@ -11,25 +27,54 @@ class OilSearchService {
       
       logger.info('🌿 Searching for oil:', normalizedOilName);
 
-      // Заглушка - возвращаем тестовый ответ
-      const mockOilData = {
-        oil_name: normalizedOilName || 'Лаванда',
-        description: 'Универсальное эфирное масло с успокаивающими свойствами.',
-        emotional_effect: 'Снимает стресс, успокаивает нервную систему, улучшает сон.',
-        physical_effect: 'Обладает антисептическими и противовоспалительными свойствами.',
-        applications: 'Ароматерапия, массаж, ингаляции, добавление в косметику.',
-        safety_warning: 'Не использовать при беременности. Тест на аллергию обязателен.',
-        joke: 'Лаванда - как лучший друг: всегда рядом и всегда помогает! 😊'
-      };
+      let oilData = null;
+
+      // Пытаемся найти масло в Supabase
+      if (this.supabase) {
+        try {
+          const { data, error } = await this.supabase
+            .from('essential_oils')
+            .select('*')
+            .ilike('name', `%${normalizedOilName}%`)
+            .limit(1)
+            .single();
+
+          if (error) {
+            logger.warn('Supabase search error:', error);
+          } else if (data) {
+            oilData = data;
+            logger.info('✅ Oil found in Supabase:', data.name);
+          }
+        } catch (dbError) {
+          logger.error('Database search error:', dbError);
+        }
+      }
+
+      // Если не найдено в БД, используем заглушку
+      if (!oilData) {
+        logger.info('Using mock data for oil:', normalizedOilName);
+        oilData = {
+          name: normalizedOilName || 'Лаванда',
+          description: 'Универсальное эфирное масло с успокаивающими свойствами.',
+          emotional_effect: 'Снимает стресс, успокаивает нервную систему, улучшает сон.',
+          physical_effect: 'Обладает антисептическими и противовоспалительными свойствами.',
+          applications: 'Ароматерапия, массаж, ингаляции, добавление в косметику.',
+          safety_warning: 'Не использовать при беременности. Тест на аллергию обязателен.',
+          joke: 'Лаванда - как лучший друг: всегда рядом и всегда помогает! 😊'
+        };
+      }
+
+      // Формируем сообщение
+      const message = `🌿 **${oilData.name}**\n\n${oilData.description}\n\n🧠 **Эмоциональный эффект:**\n${oilData.emotional_effect}\n\n💪 **Физический эффект:**\n${oilData.physical_effect}\n\n🧴 **Применение:**\n${oilData.applications}\n\n⚠️ **Осторожно:**\n${oilData.safety_warning}\n\n😄 **Кстати:**\n${oilData.joke}`;
 
       return {
         action: 'oil_found',
         chatId: chatId,
-        message: `🌿 **${mockOilData.oil_name}**\n\n${mockOilData.description}\n\n🧠 **Эмоциональный эффект:**\n${mockOilData.emotional_effect}\n\n💪 **Физический эффект:**\n${mockOilData.physical_effect}\n\n🧴 **Применение:**\n${mockOilData.applications}\n\n⚠️ **Осторожно:**\n${mockOilData.safety_warning}\n\n😄 **Кстати:**\n${mockOilData.joke}`,
+        message: message,
         keyboard: [
           [{ text: '🏠 Главное меню', callback_data: 'main_menu' }]
         ],
-        oilData: mockOilData
+        oilData: oilData
       };
 
     } catch (error) {
