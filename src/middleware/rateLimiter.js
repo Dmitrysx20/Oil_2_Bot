@@ -4,8 +4,8 @@ const config = require('../../config');
 
 // Основной rate limiter для всех запросов
 const generalRateLimiter = rateLimit({
-  windowMs: config.rateLimiting.windowMs,
-  max: config.rateLimiting.maxRequests,
+  windowMs: config.rateLimiting?.windowMs || config.rateLimit?.windowMs || 60 * 1000,
+  max: config.rateLimiting?.maxRequests || config.rateLimit?.max || 30,
   
   // Определяем ключ для группировки запросов
   keyGenerator: (req) => {
@@ -45,7 +45,7 @@ const generalRateLimiter = rateLimit({
     res.status(200).json({ 
       error: 'Rate limit exceeded',
       message: 'Слишком много запросов. Подождите немного.',
-      retryAfter: Math.ceil(config.rateLimiting.windowMs / 1000)
+      retryAfter: Math.ceil((config.rateLimiting?.windowMs || config.rateLimit?.windowMs || 60 * 1000) / 1000)
     });
   },
 
@@ -139,8 +139,8 @@ const dynamicRateLimiter = (req, res, next) => {
   // Для новых пользователей - чуть более строгие ограничения
   if (userType === 'new') {
     const newUserLimiter = rateLimit({
-      windowMs: config.rateLimiting.windowMs,
-      max: Math.floor(config.rateLimiting.maxRequests * 0.7), // 70% от обычного лимита
+      windowMs: config.rateLimiting?.windowMs || config.rateLimit?.windowMs || 60 * 1000,
+      max: Math.floor((config.rateLimiting?.maxRequests || config.rateLimit?.max || 30) * 0.7), // 70% от обычного лимита
       keyGenerator: (req) => `new_${extractChatId(req.body)}`,
       handler: generalRateLimiter.handler
     });

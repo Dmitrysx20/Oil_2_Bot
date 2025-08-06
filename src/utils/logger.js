@@ -21,7 +21,7 @@ const logFormat = winston.format.combine(
 
 // Создаем логгер
 const logger = winston.createLogger({
-  level: config.app.nodeEnv === 'production' ? 'info' : 'debug',
+  level: (config.app?.nodeEnv || config.server?.nodeEnv || 'development') === 'production' ? 'info' : 'debug',
   format: logFormat,
   defaultMeta: { service: 'aromatherapy-bot' },
   transports: [
@@ -43,7 +43,7 @@ const logger = winston.createLogger({
 });
 
 // Если мы не в продакшене, то логируем в консоль
-if (config.app.nodeEnv !== 'production') {
+if ((config.app?.nodeEnv || config.server?.nodeEnv || 'development') !== 'production') {
   logger.add(new winston.transports.Console({
     format: winston.format.combine(
       winston.format.colorize(),
