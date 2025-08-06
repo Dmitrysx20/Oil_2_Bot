@@ -1,16 +1,15 @@
 const logger = require('../utils/logger');
+const config = require('../../config');
 
 class AdminService {
   constructor() {
-    // Заглушка для админского сервиса
+    this.adminChatIds = config.admin.chatIds;
   }
 
   async checkAdminAccess(chatId) {
     try {
-      // Простая проверка админа (в реальности будет из конфига)
-      const adminChatIds = [802895688]; // Ваш ID
-      
-      if (adminChatIds.includes(parseInt(chatId))) {
+      // Проверка админа из конфигурации
+      if (this.adminChatIds.includes(parseInt(chatId))) {
         return {
           isAdmin: true,
           hasPermission: true,
