@@ -14,7 +14,7 @@ module.exports = {
     maxTokens: 2000
   },
   perplexity: {
-    apiKey: process.env.PERPLEXITY_API_KEY,
+    apiKey: process.env.PERPLEXITY_API_KEY || null,
     model: 'llama-3.1-sonar-small-128k-online'
   },
   admin: {

@@ -11,7 +11,11 @@
     "dev": "nodemon --no-deprecation app.js",
     "test": "jest",
     "migrate": "node --no-deprecation migrations/run.js",
-    "webhook:set": "node --no-deprecation scripts/setWebhook.js"
+    "webhook:set": "node --no-deprecation scripts/setWebhook.js",
+    "check:env": "node scripts/checkEnv.js",
+    "test:app": "node scripts/testApp.js",
+    "test:perplexity": "node scripts/testPerplexity.js",
+    "railway:fix": "node scripts/fixRailwayEnv.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",

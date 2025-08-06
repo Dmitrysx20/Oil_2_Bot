@@ -1,5 +1,14 @@
 {
   "NODE_NO_WARNINGS": "1",
   "NODE_OPTIONS": "--no-deprecation --no-warnings",
-  "NODE_ENV": "production"
+  "NODE_ENV": "production",
+  "PORT": "3000",
+  "TELEGRAM_BOT_TOKEN": "",
+  "OPENAI_API_KEY": "",
+  "PERPLEXITY_API_KEY": "",
+  "SUPABASE_URL": "",
+  "SUPABASE_ANON_KEY": "",
+  "ADMIN_CHAT_IDS": "",
+  "ENABLE_WEBHOOK": "false",
+  "WEBHOOK_URL": ""
 } 
