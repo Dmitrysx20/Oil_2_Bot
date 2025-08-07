@@ -1,6 +1,6 @@
 const SubscriptionService = require('../src/services/SubscriptionService');
 const MusicService = require('../src/services/MusicService');
-const OilSearchService = require('../src/services/OilSearchService');
+const OilService = require('../src/services/OilService');
 const logger = require('../src/utils/logger');
 
 async function testUserMemory() {
@@ -9,7 +9,7 @@ async function testUserMemory() {
   
   const subscriptionService = new SubscriptionService();
   const musicService = new MusicService();
-  const oilSearchService = new OilSearchService();
+  const oilService = new OilService();
   
   const testUserId = 123456789;
   
@@ -21,7 +21,7 @@ async function testUserMemory() {
   
   // Симулируем поиск масла
   try {
-    const oils = await oilSearchService.searchOils('энергия');
+    const oils = await oilService.searchOils('энергия');
     console.log('🌿 Найденные масла:');
     if (oils && oils.length > 0) {
       oils.slice(0, 3).forEach((oil, i) => {
