@@ -36,6 +36,8 @@ module.exports = async function handleUpdate(bot, update, services) {
     // Обрабатываем обновление через контроллер
     const response = await telegramController.processUpdate(update);
     
+    console.log('🔍 Response from controller:', JSON.stringify(response, null, 2));
+    
     if (response && response.message) {
       // Отправляем ответ
       const messageOptions = {
@@ -53,6 +55,13 @@ module.exports = async function handleUpdate(bot, update, services) {
             inline_keyboard: response.keyboard
           };
         }
+      }
+      
+      console.log('📤 Sending message to chatId:', response.chatId);
+      
+      if (!response.chatId) {
+        console.error('❌ chatId is undefined!');
+        return;
       }
       
       await bot.sendMessage(
