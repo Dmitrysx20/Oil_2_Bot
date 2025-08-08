@@ -55,17 +55,21 @@ class SmartRouter {
         return result;
       }
       
-      console.log('📥 Raw message object:', JSON.stringify(telegramUpdate.message, null, 2));
-      if (!telegramUpdate.message) {
-        console.log('❌ No message in update!');
+      // В режиме polling Telegram передает сообщения напрямую, без обертки message
+      // Проверяем, есть ли message в обновлении (webhook формат) или это прямое сообщение (polling формат)
+      let message = telegramUpdate.message || telegramUpdate;
+      
+      console.log('📥 Raw message object:', JSON.stringify(message, null, 2));
+      if (!message || !message.chat) {
+        console.log('❌ No valid message in update!');
         return {
           requestType: 'error',
           chatId: this.extractChatId(telegramUpdate),
-          error: 'No message in update'
+          error: 'No valid message in update'
         };
       }
       
-      const result = await this.handleTextMessage(telegramUpdate.message);
+      const result = await this.handleTextMessage(message);
       logger.info('🔍 SmartRouter result:', result?.requestType || 'undefined');
       console.log('🔍 Text result:', JSON.stringify(result, null, 2));
       return result;
@@ -522,8 +526,11 @@ class SmartRouter {
   }
 
   extractChatId(telegramUpdate) {
+    // В режиме polling Telegram передает сообщения напрямую, без обертки message
+    // Проверяем оба формата: webhook (с message) и polling (прямое сообщение)
     return telegramUpdate?.message?.chat?.id || 
            telegramUpdate?.callback_query?.message?.chat?.id || 
+           telegramUpdate?.chat?.id ||  // Для режима polling
            'unknown';
   }
 }
