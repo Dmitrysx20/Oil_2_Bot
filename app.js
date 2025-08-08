@@ -47,6 +47,8 @@ const services = {
 // === Webhook endpoint (Telegram -> наш бот)
 app.post('/webhook/telegram', async (req, res) => {
   try {
+    console.log('📥 Webhook received:', JSON.stringify(req.body, null, 2));
+    
     if (bot) {
       await bot.processUpdate(req.body);
       res.sendStatus(200);
