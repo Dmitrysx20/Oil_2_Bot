@@ -1,7 +1,7 @@
 const logger = require('../utils/logger');
 const { createClient } = require('@supabase/supabase-js');
 const config = require('../../config');
-const { findOilByName, findOilsByKeywords, getAllOils } = require('../data/oils_database');
+const { findOilByName, findOilsByKeywords, getAllOils } = require('../data/full_oils_database');
 
 class OilSearchService {
   constructor() {
