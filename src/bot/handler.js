@@ -140,6 +140,7 @@ module.exports = async function handleUpdate(bot, msg, services) {
     try {
       const oilResp = await services.oilSearch.searchDirectOil({
         normalizedOilName: lower,
+        oilName: text,
         chatId: chatId
       });
       
