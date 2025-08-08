@@ -49,6 +49,7 @@ class SmartRouter {
       const isCallback = telegramUpdate?.callback_query ? true : false;
       
       if (isCallback) {
+        console.log('🔘 Processing callback_query:', telegramUpdate.callback_query.data);
         const result = await this.handleCallbackQuery(telegramUpdate.callback_query);
         logger.info('🔍 SmartRouter result:', result?.requestType || 'undefined');
         console.log('🔍 Callback result:', JSON.stringify(result, null, 2));
@@ -58,6 +59,15 @@ class SmartRouter {
       // В режиме polling Telegram передает сообщения напрямую, без обертки message
       // Проверяем, есть ли message в обновлении (webhook формат) или это прямое сообщение (polling формат)
       let message = telegramUpdate.message || telegramUpdate;
+      
+      // Проверяем, что это действительно текстовое сообщение, а не callback_query
+      if (message?.callback_query) {
+        console.log('🔘 Processing callback_query from message:', message.callback_query.data);
+        const result = await this.handleCallbackQuery(message.callback_query);
+        logger.info('🔍 SmartRouter result:', result?.requestType || 'undefined');
+        console.log('🔍 Callback result:', JSON.stringify(result, null, 2));
+        return result;
+      }
       
       console.log('📥 Raw message object:', JSON.stringify(message, null, 2));
       if (!message || !message.chat) {
