@@ -135,7 +135,80 @@ module.exports = async function handleUpdate(bot, msg, services) {
     }
   }
 
-  // 4) AI — рекомендации по симптомам/запросам
+  // 4) Умная маршрутизация через SmartRouter
+  const routingResult = await smartRouter.routeMessage(msg);
+  
+  if (routingResult) {
+    console.log('🔍 SmartRouter result:', routingResult.requestType);
+    
+    // Обработка медицинских запросов
+    if (routingResult.requestType === 'keyword_search' && routingResult.medicalInfo) {
+      try {
+        const aiResp = await services.ai.getMedicalRecommendation(routingResult);
+        if (aiResp && aiResp.message) {
+          await bot.sendMessage(
+            chatId, 
+            aiResp.message, 
+            { 
+              parse_mode: 'Markdown',
+              reply_markup: aiResp.keyboard ? {
+                inline_keyboard: aiResp.keyboard
+              } : undefined
+            }
+          );
+          return;
+        }
+      } catch (e) {
+        console.error('Medical AI error:', e.message);
+      }
+    }
+    
+    // Обработка общих рекомендаций
+    if (routingResult.requestType === 'keyword_search' && routingResult.keywords) {
+      try {
+        const aiResp = await services.ai.getBasicRecommendation(routingResult);
+        if (aiResp && aiResp.message) {
+          await bot.sendMessage(
+            chatId, 
+            aiResp.message, 
+            { 
+              parse_mode: 'Markdown',
+              reply_markup: aiResp.keyboard ? {
+                inline_keyboard: aiResp.keyboard
+              } : undefined
+            }
+          );
+          return;
+        }
+      } catch (e) {
+        console.error('Basic AI error:', e.message);
+      }
+    }
+    
+    // Обработка музыкальных запросов
+    if (routingResult.requestType === 'music_request') {
+      try {
+        const musicResp = await services.music?.getRecommendation(routingResult);
+        if (musicResp && musicResp.message) {
+          await bot.sendMessage(
+            chatId, 
+            musicResp.message, 
+            { 
+              parse_mode: 'Markdown',
+              reply_markup: musicResp.keyboard ? {
+                inline_keyboard: musicResp.keyboard
+              } : undefined
+            }
+          );
+          return;
+        }
+      } catch (e) {
+        console.error('Music error:', e.message);
+      }
+    }
+  }
+
+  // 5) Fallback AI — если SmartRouter не сработал
   if (services?.ai) {
     try {
       const aiResp = await services.ai.tryRecommend({ chatId, text });
@@ -144,7 +217,7 @@ module.exports = async function handleUpdate(bot, msg, services) {
         return;
       }
     } catch (e) {
-      console.error('AI error:', e.message);
+      console.error('Fallback AI error:', e.message);
     }
   }
 
