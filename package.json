@@ -4,7 +4,7 @@
   "description": "Telegram бот для ароматерапии с AI и музыкальными рекомендациями",
   "main": "app.js",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.19.0"
   },
   "scripts": {
     "start": "node --no-deprecation app.js",
