@@ -135,7 +135,33 @@ module.exports = async function handleUpdate(bot, msg, services) {
     }
   }
 
-  // 4) Умная маршрутизация через SmartRouter
+  // 4) Прямой поиск масел (если SmartRouter не сработал)
+  if (services?.oilSearch) {
+    try {
+      const oilResp = await services.oilSearch.searchDirectOil({
+        normalizedOilName: lower,
+        chatId: chatId
+      });
+      
+      if (oilResp && oilResp.message) {
+        await bot.sendMessage(
+          chatId, 
+          oilResp.message, 
+          { 
+            parse_mode: 'Markdown',
+            reply_markup: oilResp.keyboard ? {
+              inline_keyboard: oilResp.keyboard
+            } : undefined
+          }
+        );
+        return;
+      }
+    } catch (e) {
+      console.error('Direct oil search error:', e.message);
+    }
+  }
+
+  // 5) Умная маршрутизация через SmartRouter
   const routingResult = await smartRouter.routeMessage(msg);
   
   if (routingResult) {
