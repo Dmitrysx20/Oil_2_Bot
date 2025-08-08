@@ -1,0 +1,482 @@
+[
+  {
+    "oil_name_ru": "Туя складчатая",
+    "oil_name_en": "Arborvitae"
+  },
+  {
+    "oil_name_ru": "Базилик",
+    "oil_name_en": "Basil"
+  },
+  {
+    "oil_name_ru": "Бергамот",
+    "oil_name_en": "Bergamot"
+  },
+  {
+    "oil_name_ru": "Берёза",
+    "oil_name_en": "Birch"
+  },
+  {
+    "oil_name_ru": "Чёрный перец",
+    "oil_name_en": "Black Pepper"
+  },
+  {
+    "oil_name_ru": "Чёрная ель",
+    "oil_name_en": "Black Spruce"
+  },
+  {
+    "oil_name_ru": "Пижма голубая",
+    "oil_name_en": "Blue Tansy"
+  },
+  {
+    "oil_name_ru": "Кардамон",
+    "oil_name_en": "Cardamom"
+  },
+  {
+    "oil_name_ru": "Кассия",
+    "oil_name_en": "Cassia"
+  },
+  {
+    "oil_name_ru": "Кедр",
+    "oil_name_en": "Cedarwood"
+  },
+  {
+    "oil_name_ru": "Семена сельдерея",
+    "oil_name_en": "Celery Seed"
+  },
+  {
+    "oil_name_ru": "Кинза",
+    "oil_name_en": "Cilantro"
+  },
+  {
+    "oil_name_ru": "Кора корицы",
+    "oil_name_en": "Cinnamon Bark"
+  },
+  {
+    "oil_name_ru": "Цитронелла",
+    "oil_name_en": "Citronella"
+  },
+  {
+    "oil_name_ru": "Шалфей мускатный",
+    "oil_name_en": "Clary Sage"
+  },
+  {
+    "oil_name_ru": "Гвоздика",
+    "oil_name_en": "Clove"
+  },
+  {
+    "oil_name_ru": "Копайба",
+    "oil_name_en": "Copaiba"
+  },
+  {
+    "oil_name_ru": "Кориандр",
+    "oil_name_en": "Coriander"
+  },
+  {
+    "oil_name_ru": "Кипарис",
+    "oil_name_en": "Cypress"
+  },
+  {
+    "oil_name_ru": "Пихта Дугласа",
+    "oil_name_en": "Douglas Fir"
+  },
+  {
+    "oil_name_ru": "Эвкалипт",
+    "oil_name_en": "Eucalyptus"
+  },
+  {
+    "oil_name_ru": "Фенхель",
+    "oil_name_en": "Fennel"
+  },
+  {
+    "oil_name_ru": "Ладан",
+    "oil_name_en": "Frankincense"
+  },
+  {
+    "oil_name_ru": "Герань",
+    "oil_name_en": "Geranium"
+  },
+  {
+    "oil_name_ru": "Имбирь",
+    "oil_name_en": "Ginger"
+  },
+  {
+    "oil_name_ru": "Грейпфрут",
+    "oil_name_en": "Grapefruit"
+  },
+  {
+    "oil_name_ru": "Зелёный мандарин",
+    "oil_name_en": "Green Mandarin"
+  },
+  {
+    "oil_name_ru": "Гваяковое дерево",
+    "oil_name_en": "Guaiacwood"
+  },
+  {
+    "oil_name_ru": "Гелихризум",
+    "oil_name_en": "Helichrysum"
+  },
+  {
+    "oil_name_ru": "Жасмин",
+    "oil_name_en": "Jasmine"
+  },
+  {
+    "oil_name_ru": "Ягоды можжевельника",
+    "oil_name_en": "Juniper Berry"
+  },
+  {
+    "oil_name_ru": "Лаванда",
+    "oil_name_en": "Lavender"
+  },
+  {
+    "oil_name_ru": "Лимон",
+    "oil_name_en": "Lemon"
+  },
+  {
+    "oil_name_ru": "Лимонный эвкалипт",
+    "oil_name_en": "Lemon Eucalyptus"
+  },
+  {
+    "oil_name_ru": "Лемонграсс",
+    "oil_name_en": "Lemongrass"
+  },
+  {
+    "oil_name_ru": "Лайм",
+    "oil_name_en": "Lime"
+  },
+  {
+    "oil_name_ru": "Мадагаскарская ваниль",
+    "oil_name_en": "Madagascar Vanilla"
+  },
+  {
+    "oil_name_ru": "Майоран",
+    "oil_name_en": "Marjoram"
+  },
+  {
+    "oil_name_ru": "Мелисса",
+    "oil_name_en": "Melissa"
+  },
+  {
+    "oil_name_ru": "Мирра",
+    "oil_name_en": "Myrrh"
+  },
+  {
+    "oil_name_ru": "Нероли",
+    "oil_name_en": "Neroli"
+  },
+  {
+    "oil_name_ru": "Орегано",
+    "oil_name_en": "Oregano"
+  },
+  {
+    "oil_name_ru": "Пачули",
+    "oil_name_en": "Patchouli"
+  },
+  {
+    "oil_name_ru": "Мята перечная",
+    "oil_name_en": "Peppermint"
+  },
+  {
+    "oil_name_ru": "Петитгрейн",
+    "oil_name_en": "Petitgrain"
+  },
+  {
+    "oil_name_ru": "Розовый перец",
+    "oil_name_en": "Pink Pepper"
+  },
+  {
+    "oil_name_ru": "Римская ромашка",
+    "oil_name_en": "Roman Chamomile"
+  },
+  {
+    "oil_name_ru": "Роза",
+    "oil_name_en": "Rose"
+  },
+  {
+    "oil_name_ru": "Розмарин",
+    "oil_name_en": "Rosemary"
+  },
+  {
+    "oil_name_ru": "Сандал (гавайский)",
+    "oil_name_en": "Sandalwood (Hawaiian)"
+  },
+  {
+    "oil_name_ru": "Пихта сибирская",
+    "oil_name_en": "Siberian Fir"
+  },
+  {
+    "oil_name_ru": "Шалфей испанский",
+    "oil_name_en": "Spanish Sage"
+  },
+  {
+    "oil_name_ru": "Мята зелёная",
+    "oil_name_en": "Spearmint"
+  },
+  {
+    "oil_name_ru": "Спикенард",
+    "oil_name_en": "Spikenard"
+  },
+  {
+    "oil_name_ru": "Мандарин",
+    "oil_name_en": "Tangerine"
+  },
+  {
+    "oil_name_ru": "Чайное дерево",
+    "oil_name_en": "Tea Tree"
+  },
+  {
+    "oil_name_ru": "Тимьян",
+    "oil_name_en": "Thyme"
+  },
+  {
+    "oil_name_ru": "Куркума",
+    "oil_name_en": "Turmeric"
+  },
+  {
+    "oil_name_ru": "Ветивер",
+    "oil_name_en": "Vetiver"
+  },
+  {
+    "oil_name_ru": "Дикий апельсин",
+    "oil_name_en": "Wild Orange"
+  },
+  {
+    "oil_name_ru": "Винтергрин",
+    "oil_name_en": "Wintergreen"
+  },
+  {
+    "oil_name_ru": "Иланг-иланг",
+    "oil_name_en": "Ylang Ylang"
+  },
+  {
+    "oil_name_ru": "Литсея кубеба",
+    "oil_name_en": "Litsea"
+  },
+  {
+    "oil_name_ru": "Манука",
+    "oil_name_en": "Manuka"
+  },
+  {
+    "oil_name_ru": "Магнолия",
+    "oil_name_en": "Magnolia"
+  },
+  {
+    "oil_name_ru": "Синий лотос",
+    "oil_name_en": "Blue Lotus"
+  },
+  {
+    "oil_name_ru": "Тулси (священный базилик)",
+    "oil_name_en": "Tulsi (Holy Basil)"
+  },
+  {
+    "oil_name_ru": "Равинцара",
+    "oil_name_en": "Ravintsara"
+  },
+  {
+    "oil_name_ru": "Ладанник",
+    "oil_name_en": "Cistus"
+  },
+  {
+    "oil_name_ru": "Тмин",
+    "oil_name_en": "Caraway"
+  },
+  {
+    "oil_name_ru": "Укроп",
+    "oil_name_en": "Dill"
+  },
+  {
+    "oil_name_ru": "Иссоп",
+    "oil_name_en": "Hyssop"
+  },
+  {
+    "oil_name_ru": "Адаптив",
+    "oil_name_en": "Adaptiv"
+  },
+  {
+    "oil_name_ru": "Эйр-Икс",
+    "oil_name_en": "Air-X"
+  },
+  {
+    "oil_name_ru": "Анкор",
+    "oil_name_en": "Anchor"
+  },
+  {
+    "oil_name_ru": "Алайн",
+    "oil_name_en": "Align"
+  },
+  {
+    "oil_name_ru": "Эрайз",
+    "oil_name_en": "Arise"
+  },
+  {
+    "oil_name_ru": "АромаТач",
+    "oil_name_en": "AromaTouch"
+  },
+  {
+    "oil_name_ru": "Баланс",
+    "oil_name_en": "Balance"
+  },
+  {
+    "oil_name_ru": "Бьютифул",
+    "oil_name_en": "Beautiful"
+  },
+  {
+    "oil_name_ru": "Бриз",
+    "oil_name_en": "Breathe"
+  },
+  {
+    "oil_name_ru": "Брейв",
+    "oil_name_en": "Brave"
+  },
+  {
+    "oil_name_ru": "Калмер",
+    "oil_name_en": "Calmer"
+  },
+  {
+    "oil_name_ru": "Чир",
+    "oil_name_en": "Cheer"
+  },
+  {
+    "oil_name_ru": "Ситрус Блум",
+    "oil_name_en": "Citrus Bloom"
+  },
+  {
+    "oil_name_ru": "Ситрус Блисс",
+    "oil_name_en": "Citrus Bliss"
+  },
+  {
+    "oil_name_ru": "КлариКалм",
+    "oil_name_en": "ClaryCalm"
+  },
+  {
+    "oil_name_ru": "Консол",
+    "oil_name_en": "Console"
+  },
+  {
+    "oil_name_ru": "Дип Блу",
+    "oil_name_en": "Deep Blue"
+  },
+  {
+    "oil_name_ru": "ДайджестЗен",
+    "oil_name_en": "DigestZen"
+  },
+  {
+    "oil_name_ru": "Элевейшн",
+    "oil_name_en": "Elevation"
+  },
+  {
+    "oil_name_ru": "Форгив",
+    "oil_name_en": "Forgive"
+  },
+  {
+    "oil_name_ru": "ХД Клеар",
+    "oil_name_en": "HD Clear"
+  },
+  {
+    "oil_name_ru": "Холидей Джой",
+    "oil_name_en": "Holiday Joy"
+  },
+  {
+    "oil_name_ru": "Холидей Пис",
+    "oil_name_en": "Holiday Peace"
+  },
+  {
+    "oil_name_ru": "Иммортель",
+    "oil_name_en": "Immortelle"
+  },
+  {
+    "oil_name_ru": "ИнТюн",
+    "oil_name_en": "InTune"
+  },
+  {
+    "oil_name_ru": "Метапауэр",
+    "oil_name_en": "MetaPWR"
+  },
+  {
+    "oil_name_ru": "Мотивейт",
+    "oil_name_en": "Motivate"
+  },
+  {
+    "oil_name_ru": "Он Гард",
+    "oil_name_en": "On Guard"
+  },
+  {
+    "oil_name_ru": "Паст Тенс",
+    "oil_name_en": "PastTense"
+  },
+  {
+    "oil_name_ru": "Пэшн",
+    "oil_name_en": "Passion"
+  },
+  {
+    "oil_name_ru": "Пис",
+    "oil_name_en": "Peace"
+  },
+  {
+    "oil_name_ru": "Пьюрифай",
+    "oil_name_en": "Purify"
+  },
+  {
+    "oil_name_ru": "Рескьюер",
+    "oil_name_en": "Rescuer"
+  },
+  {
+    "oil_name_ru": "Серенити",
+    "oil_name_en": "Serenity"
+  },
+  {
+    "oil_name_ru": "Слим энд Сэсси",
+    "oil_name_en": "Slim & Sassy"
+  },
+  {
+    "oil_name_ru": "Стеади",
+    "oil_name_en": "Steady"
+  },
+  {
+    "oil_name_ru": "Стронгер",
+    "oil_name_en": "Stronger"
+  },
+  {
+    "oil_name_ru": "СуперМент",
+    "oil_name_en": "SuperMint"
+  },
+  {
+    "oil_name_ru": "Теймер",
+    "oil_name_en": "Tamer"
+  },
+  {
+    "oil_name_ru": "Тинкер",
+    "oil_name_en": "Thinker"
+  },
+  {
+    "oil_name_ru": "Виспер",
+    "oil_name_en": "Whisper"
+  },
+  {
+    "oil_name_ru": "Зендокрин",
+    "oil_name_en": "Zendocrine"
+  },
+  {
+    "oil_name_ru": "Яроу|Пом",
+    "oil_name_en": "Yarrow|Pom"
+  },
+  {
+    "oil_name_ru": "ЗенДжест",
+    "oil_name_en": "ZenGest"
+  },
+  {
+    "oil_name_ru": "Изи Эйр",
+    "oil_name_en": "Easy Air"
+  },
+  {
+    "oil_name_ru": "Айленд Минт",
+    "oil_name_en": "Island Mint"
+  },
+  {
+    "oil_name_ru": "Харвест Спайс",
+    "oil_name_en": "Harvest Spice"
+  },
+  {
+    "oil_name_ru": "Норсерн Эскейп",
+    "oil_name_en": "Northern Escape"
+  }
+]

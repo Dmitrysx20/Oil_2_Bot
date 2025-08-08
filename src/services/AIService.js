@@ -1,6 +1,7 @@
 const logger = require('../utils/logger');
 const axios = require('axios');
 const config = require('../../config');
+const { findOilsByKeywords, getAllOils } = require('../data/oils_database');
 
 class AIService {
   constructor() {
@@ -37,7 +38,36 @@ class AIService {
         }
       }
 
-      // Fallback к заглушке, если OpenAI недоступен
+      // Используем локальную базу данных для рекомендаций
+      const mainKeyword = keywords?.[0] || 'спокойствие';
+      
+      // Ищем масла по ключевым словам
+      const recommendedOils = findOilsByKeywords(mainKeyword);
+      
+      if (recommendedOils.length > 0) {
+        // Берем первое подходящее масло
+        const oil = recommendedOils[0];
+        
+        const recommendation = `🌿 **Для "${mainKeyword}" рекомендую:**\n\n🌿 **${oil.oil_name}**\n💡 **Применение:**\n• **Основной способ:** ${oil.applications}\n• **Эмоциональный эффект:** ${oil.emotional_effect}\n\n⚡ **Быстрый рецепт:**\n- ${oil.oil_name}: 2-3 капли\n- Базовое масло: 15 мл\n- **Применение:** Массаж или ароматерапия\n\n⚠️ **Безопасность:**\n${oil.safety_warning}\n\n😄 **Кстати:**\n${oil.joke}`;
+        
+        return {
+          action: 'ai_recommendation',
+          chatId: chatId,
+          message: recommendation,
+          keyboard: [
+            [{ text: '🏠 Главное меню', callback_data: 'main_menu' }]
+          ],
+          aiData: {
+            type: 'basic',
+            keywords: keywords,
+            recommendedOil: oil.oil_name,
+            tokensUsed: 150,
+            source: 'local_database'
+          }
+        };
+      }
+      
+      // Fallback к заглушке, если масло не найдено
       const recommendations = {
         'энергия': '⚡ **Для энергии рекомендую:**\n\n🌿 **Мята перечная**\n💡 **Применение:**\n• **Основной способ:** 2-3 капли + базовое масло\n• **Частота:** 2-3 раза в день\n\n⚡ **Быстрый рецепт:**\n- Мята перечная: 2 капли\n- Базовое масло: 10 мл\n- **Применение:** Массаж висков и шеи\n\n⚠️ **Безопасность:**\n- Разбавлять базовым маслом\n- Тест на чувствительность',
         'спокойствие': '🧘 **Для спокойствия рекомендую:**\n\n🌿 **Лаванда**\n💡 **Применение:**\n• **Основной способ:** 3-4 капли в диффузор\n• **Частота:** 1-2 раза в день\n\n⚡ **Быстрый рецепт:**\n- Лаванда: 3 капли\n- Базовое масло: 15 мл\n- **Применение:** Массаж спины и плеч\n\n⚠️ **Безопасность:**\n- Не использовать при беременности\n- Тест на аллергию обязателен',

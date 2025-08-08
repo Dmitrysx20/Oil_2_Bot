@@ -1,6 +1,7 @@
 const logger = require('../utils/logger');
 const { createClient } = require('@supabase/supabase-js');
 const config = require('../../config');
+const { findOilByName, findOilsByKeywords, getAllOils } = require('../data/oils_database');
 
 class OilSearchService {
   constructor() {
@@ -50,18 +51,35 @@ class OilSearchService {
         }
       }
 
-      // Если не найдено в БД, используем заглушку
+      // Если не найдено в Supabase, ищем в локальной базе данных
       if (!oilData) {
-        logger.info('Using mock data for oil:', normalizedOilName);
-        oilData = {
-          name: normalizedOilName || 'Лаванда',
-          description: 'Универсальное эфирное масло с успокаивающими свойствами.',
-          emotional_effect: 'Снимает стресс, успокаивает нервную систему, улучшает сон.',
-          physical_effect: 'Обладает антисептическими и противовоспалительными свойствами.',
-          applications: 'Ароматерапия, массаж, ингаляции, добавление в косметику.',
-          safety_warning: 'Не использовать при беременности. Тест на аллергию обязателен.',
-          joke: 'Лаванда - как лучший друг: всегда рядом и всегда помогает! 😊'
-        };
+        logger.info('Searching in local database for oil:', normalizedOilName);
+        const localOil = findOilByName(normalizedOilName);
+        
+        if (localOil) {
+          oilData = {
+            name: localOil.oil_name,
+            description: localOil.description,
+            emotional_effect: localOil.emotional_effect,
+            physical_effect: localOil.physical_effect,
+            applications: localOil.applications,
+            safety_warning: localOil.safety_warning,
+            joke: localOil.joke
+          };
+          logger.info('✅ Oil found in local database:', localOil.oil_name);
+        } else {
+          // Fallback к заглушке, если масло не найдено
+          logger.info('Oil not found, using fallback data for:', normalizedOilName);
+          oilData = {
+            name: normalizedOilName || 'Лаванда',
+            description: 'Универсальное эфирное масло с успокаивающими свойствами.',
+            emotional_effect: 'Снимает стресс, успокаивает нервную систему, улучшает сон.',
+            physical_effect: 'Обладает антисептическими и противовоспалительными свойствами.',
+            applications: 'Ароматерапия, массаж, ингаляции, добавление в косметику.',
+            safety_warning: 'Не использовать при беременности. Тест на аллергию обязателен.',
+            joke: 'Лаванда - как лучший друг: всегда рядом и всегда помогает! 😊'
+          };
+        }
       }
 
       // Формируем сообщение
