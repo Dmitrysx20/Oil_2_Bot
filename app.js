@@ -103,7 +103,14 @@ app.listen(PORT, '0.0.0.0', async () => {
           await axios.get(`https://api.telegram.org/bot${TOKEN}/setWebhook`, { params: { url: hook } });
           console.log('🔗 Webhook set:', hook);
         } else {
-          await bot.startPolling({ polling: true, interval: 300, params: { timeout: 10 } });
+          await bot.startPolling({ 
+            polling: true, 
+            interval: 1000, 
+            params: { 
+              timeout: 10,
+              allowed_updates: ['message', 'callback_query']
+            } 
+          });
           console.log('📡 Polling started');
         }
       } else {
