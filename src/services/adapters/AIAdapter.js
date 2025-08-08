@@ -25,6 +25,20 @@ class AIAdapter {
     if (res.message) return { ok: true, message: res.message };
     return { ok: false };
   }
+
+  /**
+   * Базовые рекомендации - прокси к AIService
+   */
+  async getBasicRecommendation(params) {
+    return await this.svc.getBasicRecommendation(params);
+  }
+
+  /**
+   * Медицинские рекомендации - прокси к AIService
+   */
+  async getMedicalRecommendation(params) {
+    return await this.svc.getMedicalRecommendation(params);
+  }
 }
 
 module.exports = AIAdapter;

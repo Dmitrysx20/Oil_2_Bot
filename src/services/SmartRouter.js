@@ -28,6 +28,7 @@ class SmartRouter {
       'мята садовая': 'Мята садовая',
       'мята лимонная': 'Мята лимонная',
       'эвкалипт': 'Эвкалипт',
+      'эфкалипт': 'Эвкалипт',
       'эвкалипт лучистый': 'Эвкалипт лучистый',
       'ромашка': 'Ромашка римская',
       'ромашка римская': 'Ромашка римская',
@@ -47,10 +48,15 @@ class SmartRouter {
       const isCallback = telegramUpdate?.callback_query ? true : false;
       
       if (isCallback) {
-        return await this.handleCallbackQuery(telegramUpdate.callback_query);
+        const result = await this.handleCallbackQuery(telegramUpdate.callback_query);
+        logger.info('🔍 SmartRouter result:', result?.requestType || 'undefined');
+        return result;
       }
       
-      return await this.handleTextMessage(telegramUpdate.message);
+      const result = await this.handleTextMessage(telegramUpdate.message);
+      logger.info('🔍 SmartRouter result:', result?.requestType || 'undefined');
+      logger.info('🔍 Full result:', JSON.stringify(result, null, 2));
+      return result;
       
     } catch (error) {
       logger.error('Smart Router error:', error);
@@ -226,28 +232,32 @@ class SmartRouter {
       };
     }
 
-    // 6. Поиск конкретных масел
+    // 6. Поиск конкретных масел (ВЫСОКИЙ ПРИОРИТЕТ)
     const oilResult = this.findOil(normalizedText);
-    if (oilResult.isAmbiguous) {
-      return {
-        requestType: 'disambiguation',
-        chatId: chatId,
-        originalQuery: oilResult.query,
-        ambiguousKey: oilResult.key,
-        options: oilResult.options,
-        defaultChoice: oilResult.defaultChoice
-      };
-    } else if (oilResult.result) {
-      return {
-        requestType: 'direct_search',
-        chatId: chatId,
-        oilName: oilResult.query,
-        normalizedOilName: oilResult.result,
-        detectedCommand: 'простое название'
-      };
+    if (oilResult.result || oilResult.isAmbiguous) {
+      if (oilResult.isAmbiguous) {
+        return {
+          requestType: 'disambiguation',
+          chatId: chatId,
+          originalQuery: oilResult.query,
+          ambiguousKey: oilResult.key,
+          options: oilResult.options,
+          defaultChoice: oilResult.defaultChoice
+        };
+      } else {
+        return {
+          requestType: 'direct_search',
+          chatId: chatId,
+          oilName: oilResult.result.toLowerCase(),
+          normalizedOilName: oilResult.result,
+          detectedCommand: 'поиск масла',
+          originalText: rawText,
+          normalizedText: normalizedText
+        };
+      }
     }
 
-    // 7. Ключевые слова для общих рекомендаций
+    // 7. Ключевые слова для общих рекомендаций (только если не найдены конкретные масла)
     const keywords = this.extractKeywords(normalizedText);
     if (keywords.length > 0) {
       return {
@@ -460,11 +470,11 @@ class SmartRouter {
 
   extractKeywords(normalizedText) {
     const keywordMap = {
-      'энергия': ['энергия', 'бодрость', 'активность', 'сил'],
-      'спокойствие': ['спокойствие', 'расслабл', 'релакс', 'покой'],
-      'сон': ['сон', 'засыпать', 'уснуть'],
-      'стресс': ['напряжение', 'волнение'],
-      'концентрация': ['фокус', 'внимание', 'сосредоточ']
+      'энергия': ['энергия', 'енергия', 'бодрость', 'активность', 'сил', 'нужна энергия', 'нужна енергия', 'хочу энергии', 'для энергии'],
+      'спокойствие': ['спокойствие', 'расслабл', 'релакс', 'покой', 'успокоить', 'хочу расслабиться'],
+      'сон': ['сон', 'засыпать', 'уснуть', 'для сна', 'хочу спать'],
+      'стресс': ['стресс', 'напряжение', 'волнение', 'от стресса'],
+      'концентрация': ['концентрация', 'фокус', 'внимание', 'сосредоточ', 'для концентрации']
     };
 
     const foundKeywords = [];

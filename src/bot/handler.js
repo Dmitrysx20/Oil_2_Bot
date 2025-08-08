@@ -83,87 +83,8 @@ module.exports = async function handleUpdate(bot, msg, services) {
     return;
   }
 
-  // 3) Масла — используем SmartRouter для умного поиска
-  const oilResult = smartRouter.findOil(lower);
-  
-  if (oilResult.result || oilResult.isAmbiguous) {
-    if (oilResult.isAmbiguous) {
-      // Неоднозначный случай - показываем варианты
-      const ambiguousResp = await services.oilSearch.handleAmbiguousOil({
-        ambiguousKey: oilResult.key,
-        options: oilResult.options,
-        defaultChoice: oilResult.defaultChoice,
-        originalQuery: text,
-        chatId: chatId
-      });
-      
-      await bot.sendMessage(
-        chatId, 
-        ambiguousResp.message, 
-        { 
-          parse_mode: 'Markdown',
-          reply_markup: {
-            inline_keyboard: ambiguousResp.keyboard
-          }
-        }
-      );
-      return;
-    } else {
-      // Конкретное масло - показываем информацию
-      try {
-        const oilResp = await services.oilSearch.searchDirectOil({
-          normalizedOilName: oilResult.result.toLowerCase(),
-          chatId: chatId
-        });
-        
-        if (oilResp && oilResp.message) {
-          await bot.sendMessage(
-            chatId, 
-            oilResp.message, 
-            { 
-              parse_mode: 'Markdown',
-              reply_markup: oilResp.keyboard ? {
-                inline_keyboard: oilResp.keyboard
-              } : undefined
-            }
-          );
-          return;
-        }
-      } catch (e) {
-        console.error('OilSearch error:', e.message);
-      }
-    }
-  }
-
-  // 4) Прямой поиск масел (если SmartRouter не сработал)
-  if (services?.oilSearch) {
-    try {
-      const oilResp = await services.oilSearch.searchDirectOil({
-        normalizedOilName: lower,
-        oilName: text,
-        chatId: chatId
-      });
-      
-      if (oilResp && oilResp.message) {
-        await bot.sendMessage(
-          chatId, 
-          oilResp.message, 
-          { 
-            parse_mode: 'Markdown',
-            reply_markup: oilResp.keyboard ? {
-              inline_keyboard: oilResp.keyboard
-            } : undefined
-          }
-        );
-        return;
-      }
-    } catch (e) {
-      console.error('Direct oil search error:', e.message);
-    }
-  }
-
-  // 5) Умная маршрутизация через SmartRouter
-  const routingResult = await smartRouter.routeMessage(msg);
+  // 3) Умная маршрутизация через SmartRouter
+  const routingResult = await smartRouter.routeMessage({ message: msg });
   
   if (routingResult) {
     console.log('🔍 SmartRouter result:', routingResult.requestType);
@@ -186,11 +107,11 @@ module.exports = async function handleUpdate(bot, msg, services) {
           return;
         }
       } catch (e) {
-        console.error('Medical AI error:', e.message);
+        console.error('AI Medical error:', e.message);
       }
     }
     
-    // Обработка общих рекомендаций
+    // Обработка общих рекомендаций по ключевым словам
     if (routingResult.requestType === 'keyword_search' && routingResult.keywords) {
       try {
         const aiResp = await services.ai.getBasicRecommendation(routingResult);
@@ -208,29 +129,60 @@ module.exports = async function handleUpdate(bot, msg, services) {
           return;
         }
       } catch (e) {
-        console.error('Basic AI error:', e.message);
+        console.error('AI Basic error:', e.message);
       }
     }
     
-    // Обработка музыкальных запросов
-    if (routingResult.requestType === 'music_request') {
+    // Обработка поиска конкретных масел
+    if (routingResult.requestType === 'direct_search') {
       try {
-        const musicResp = await services.music?.getRecommendation(routingResult);
-        if (musicResp && musicResp.message) {
+        const oilResp = await services.oilSearch.searchDirectOil({
+          normalizedOilName: routingResult.normalizedOilName,
+          chatId: chatId
+        });
+        
+        if (oilResp && oilResp.message) {
           await bot.sendMessage(
             chatId, 
-            musicResp.message, 
+            oilResp.message, 
             { 
               parse_mode: 'Markdown',
-              reply_markup: musicResp.keyboard ? {
-                inline_keyboard: musicResp.keyboard
+              reply_markup: oilResp.keyboard ? {
+                inline_keyboard: oilResp.keyboard
               } : undefined
             }
           );
           return;
         }
       } catch (e) {
-        console.error('Music error:', e.message);
+        console.error('OilSearch error:', e.message);
+      }
+    }
+    
+    // Обработка неоднозначных масел
+    if (routingResult.requestType === 'disambiguation') {
+      try {
+        const ambiguousResp = await services.oilSearch.handleAmbiguousOil({
+          ambiguousKey: routingResult.ambiguousKey,
+          options: routingResult.options,
+          defaultChoice: routingResult.defaultChoice,
+          originalQuery: routingResult.originalQuery,
+          chatId: chatId
+        });
+        
+        await bot.sendMessage(
+          chatId, 
+          ambiguousResp.message, 
+          { 
+            parse_mode: 'Markdown',
+            reply_markup: {
+              inline_keyboard: ambiguousResp.keyboard
+            }
+          }
+        );
+        return;
+      } catch (e) {
+        console.error('Ambiguous oil error:', e.message);
       }
     }
   }

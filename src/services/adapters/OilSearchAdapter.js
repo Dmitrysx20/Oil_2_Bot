@@ -23,6 +23,20 @@ class OilSearchAdapter {
     if (res && res.message) return { ok: true, message: res.message };
     return { ok: false };
   }
+
+  /**
+   * Прямой поиск масла - прокси к OilSearchService
+   */
+  async searchDirectOil(params) {
+    return await this.svc.searchDirectOil(params);
+  }
+
+  /**
+   * Обработка неоднозначных масел - прокси к OilSearchService
+   */
+  async handleAmbiguousOil(params) {
+    return await this.svc.handleAmbiguousOil(params);
+  }
 }
 
 module.exports = OilSearchAdapter;
