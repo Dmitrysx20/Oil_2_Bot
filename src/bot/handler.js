@@ -1,12 +1,12 @@
 // Универсальная шина обработки сообщений через TelegramController
-const TelegramController = require('../src/controllers/TelegramController');
-const TelegramService = require('../src/services/TelegramService');
-const SmartRouter = require('../src/services/SmartRouter');
-const OilSearchService = require('../src/services/OilSearchService');
-const AIService = require('../src/services/AIService');
-const MusicService = require('../src/services/MusicService');
-const SubscriptionService = require('../src/services/SubscriptionService');
-const AdminService = require('../src/services/AdminService');
+const TelegramController = require('../controllers/TelegramController');
+const TelegramService = require('../services/TelegramService');
+const SmartRouter = require('../services/SmartRouter');
+const OilSearchService = require('../services/OilSearchService');
+const AIService = require('../services/AIService');
+const MusicService = require('../services/MusicService');
+const SubscriptionService = require('../services/SubscriptionService');
+const AdminService = require('../services/AdminService');
 
 module.exports = async function handleUpdate(bot, update, services) {
   try {
