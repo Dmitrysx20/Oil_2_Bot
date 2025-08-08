@@ -17,8 +17,37 @@ module.exports = async function handleUpdate(bot, msg, services) {
     return;
   }
 
-  // 2) Масла — сначала пробуем твою базу
-  if (services?.oilSearch) {
+  // 2) Проверяем, не является ли это вопросом о возможностях
+  if (lower.includes('что ты можешь') || lower.includes('что умеешь') || lower.includes('помощь') || lower.includes('help')) {
+    await bot.sendMessage(
+      chatId,
+      `🤖 **Что я умею:**
+
+🌿 **Поиск масел** - расскажу о любом эфирном масле
+• "Лаванда", "Мята", "Лимон", "Розмарин"
+
+⚡ **Рекомендации по эффектам** - подберу масла под ваши потребности
+• "Нужна энергия", "Хочу расслабиться", "Для сна"
+
+🎵 **Музыкальные плейлисты** - подберу музыку под настроение
+• "Музыка для сна", "Для медитации"
+
+💡 **AI рекомендации** - дам персональные советы
+• "Болит голова", "Стресс на работе"
+
+🔔 **Уведомления** - настрою напоминания о новых маслах
+
+**Попробуйте:** "Лаванда", "Нужна энергия", "Помощь"`,
+      { parse_mode: 'Markdown' }
+    );
+    return;
+  }
+
+  // 3) Масла — проверяем конкретные названия масел
+  const oilKeywords = ['лаванда', 'мята', 'лимон', 'апельсин', 'розмарин', 'эвкалипт', 'чайное дерево', 'ромашка', 'бергамот', 'иланг-иланг'];
+  const isOilRequest = oilKeywords.some(keyword => lower.includes(keyword));
+  
+  if (isOilRequest && services?.oilSearch) {
     try {
       const oilResp = await services.oilSearch.tryAnswer(text, chatId);
       if (oilResp?.ok) {
@@ -30,7 +59,7 @@ module.exports = async function handleUpdate(bot, msg, services) {
     }
   }
 
-  // 3) AI — рекомендации по симптомам/запросам
+  // 4) AI — рекомендации по симптомам/запросам
   if (services?.ai) {
     try {
       const aiResp = await services.ai.tryRecommend({ chatId, text });
@@ -43,6 +72,17 @@ module.exports = async function handleUpdate(bot, msg, services) {
     }
   }
 
-  // 4) Фолбэк
-  await bot.sendMessage(chatId, `🤔 Не понял: "${text}". Напиши /start.`);
+  // 5) Фолбэк
+  await bot.sendMessage(
+    chatId, 
+    `🤔 Не понял: "${text}". 
+
+💡 **Попробуйте:**
+• "Лаванда" - информация о масле
+• "Нужна энергия" - масла для бодрости  
+• "Что ты можешь" - мои возможности
+• "Помощь" - справка
+
+Или напишите /start для начала работы.`
+  );
 };
