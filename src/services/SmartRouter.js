@@ -50,6 +50,21 @@ class SmartRouter {
       console.log('🔍 telegramUpdate.callback_query:', telegramUpdate?.callback_query);
       console.log('🔍 telegramUpdate.hasOwnProperty("callback_query"):', telegramUpdate?.hasOwnProperty('callback_query'));
       
+      // Проверяем кастомный формат callback_query (когда data есть в корне объекта)
+      if (telegramUpdate?.data && telegramUpdate?.from && telegramUpdate?.message) {
+        console.log('🔘 Processing custom callback_query format:', telegramUpdate.data);
+        const customCallbackQuery = {
+          id: telegramUpdate.id || 'custom_id',
+          from: telegramUpdate.from,
+          message: telegramUpdate.message,
+          data: telegramUpdate.data
+        };
+        const result = await this.handleCallbackQuery(customCallbackQuery);
+        logger.info('🔍 SmartRouter result:', result?.requestType || 'undefined');
+        console.log('🔍 Callback result:', JSON.stringify(result, null, 2));
+        return result;
+      }
+      
       const isCallback = telegramUpdate?.callback_query ? true : false;
       console.log('🔍 isCallback:', isCallback);
       
