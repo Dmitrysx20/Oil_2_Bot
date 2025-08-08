@@ -38,15 +38,27 @@ module.exports = async function handleUpdate(bot, update, services) {
     
     if (response && response.message) {
       // Отправляем ответ
+      const messageOptions = {
+        parse_mode: 'Markdown'
+      };
+      
+      // Правильно обрабатываем клавиатуру
+      if (response.keyboard) {
+        if (response.keyboard.inline_keyboard) {
+          // Клавиатура уже в правильном формате
+          messageOptions.reply_markup = response.keyboard;
+        } else {
+          // Клавиатура в старом формате, оборачиваем в inline_keyboard
+          messageOptions.reply_markup = {
+            inline_keyboard: response.keyboard
+          };
+        }
+      }
+      
       await bot.sendMessage(
         response.chatId, 
         response.message, 
-        { 
-          parse_mode: 'Markdown',
-          reply_markup: response.keyboard ? {
-            inline_keyboard: response.keyboard
-          } : undefined
-        }
+        messageOptions
       );
       
       // Отвечаем на callback_query если есть

@@ -222,14 +222,13 @@ class TelegramController {
     const { chatId, oilName, normalizedOilName, callbackQueryId } = routeResult;
     
     try {
-      const oilInfo = await this.oilSearchService.searchOil(normalizedOilName);
+      const oilInfo = await this.oilSearchService.searchDirectOil(routeResult);
       
-      if (oilInfo) {
-        const formattedResponse = responseFormatter.formatOilInfo(oilInfo);
+      if (oilInfo && oilInfo.action === 'oil_found') {
         return {
           chatId,
-          message: formattedResponse,
-          keyboard: this.getOilActionsKeyboard(oilName),
+          message: oilInfo.message,
+          keyboard: { inline_keyboard: oilInfo.keyboard },
           callbackQueryId
         };
       } else {
