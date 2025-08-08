@@ -32,16 +32,17 @@
     "railway:force-clean": "node scripts/forceCleanRailway.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0",
-    "axios": "^1.6.2",
-    "dotenv": "^16.6.1",
-    "express": "^4.18.2",
-    "express-rate-limit": "^7.1.5",
-    "joi": "^17.11.0",
-    "node-cron": "^3.0.3",
-    "openai": "^4.24.0",
-    "winston": "^3.11.0"
-  },
+  "@supabase/supabase-js": "^2.39.0",
+  "axios": "^1.6.2",
+  "dotenv": "^16.6.1",
+  "express": "^4.18.2",
+  "express-rate-limit": "^7.1.5",
+  "joi": "^17.11.0",
+  "node-cron": "^3.0.3",
+  "node-telegram-bot-api": "^0.66.0",
+  "openai": "^4.24.0",
+  "winston": "^3.11.0"
+},
   "devDependencies": {
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",
