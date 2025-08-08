@@ -39,16 +39,16 @@ class AIService {
       }
 
       // Используем локальную базу данных для рекомендаций
-      const mainKeyword = keywords?.[0] || 'спокойствие';
+      const searchKeyword = keywords?.[0] || 'спокойствие';
       
       // Ищем масла по ключевым словам
-      const recommendedOils = findOilsByKeywords(mainKeyword);
+      const recommendedOils = findOilsByKeywords(searchKeyword);
       
       if (recommendedOils.length > 0) {
         // Берем первое подходящее масло
         const oil = recommendedOils[0];
         
-        const recommendation = `🌿 **Для "${mainKeyword}" рекомендую:**\n\n🌿 **${oil.oil_name}**\n💡 **Применение:**\n• **Основной способ:** ${oil.applications}\n• **Эмоциональный эффект:** ${oil.emotional_effect}\n\n⚡ **Быстрый рецепт:**\n- ${oil.oil_name}: 2-3 капли\n- Базовое масло: 15 мл\n- **Применение:** Массаж или ароматерапия\n\n⚠️ **Безопасность:**\n${oil.safety_warning}\n\n😄 **Кстати:**\n${oil.joke}`;
+        const recommendation = `🌿 **Для "${searchKeyword}" рекомендую:**\n\n🌿 **${oil.oil_name}**\n💡 **Применение:**\n• **Основной способ:** ${oil.applications}\n• **Эмоциональный эффект:** ${oil.emotional_effect}\n\n⚡ **Быстрый рецепт:**\n- ${oil.oil_name}: 2-3 капли\n- Базовое масло: 15 мл\n- **Применение:** Массаж или ароматерапия\n\n⚠️ **Безопасность:**\n${oil.safety_warning}\n\n😄 **Кстати:**\n${oil.joke}`;
         
         return {
           action: 'ai_recommendation',
