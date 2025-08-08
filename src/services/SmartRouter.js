@@ -45,8 +45,13 @@ class SmartRouter {
       logger.info('🧠 Smart Router processing update');
       console.log('📥 Raw update:', JSON.stringify(telegramUpdate, null, 2));
       
-      // Проверяем тип обновления
+      // Проверяем тип обновления - более детальная проверка
+      console.log('🔍 Checking for callback_query...');
+      console.log('🔍 telegramUpdate.callback_query:', telegramUpdate?.callback_query);
+      console.log('🔍 telegramUpdate.hasOwnProperty("callback_query"):', telegramUpdate?.hasOwnProperty('callback_query'));
+      
       const isCallback = telegramUpdate?.callback_query ? true : false;
+      console.log('🔍 isCallback:', isCallback);
       
       if (isCallback) {
         console.log('🔘 Processing callback_query:', telegramUpdate.callback_query.data);
