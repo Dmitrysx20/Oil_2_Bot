@@ -55,6 +55,16 @@ class SmartRouter {
         return result;
       }
       
+      console.log('📥 Raw message object:', JSON.stringify(telegramUpdate.message, null, 2));
+      if (!telegramUpdate.message) {
+        console.log('❌ No message in update!');
+        return {
+          requestType: 'error',
+          chatId: this.extractChatId(telegramUpdate),
+          error: 'No message in update'
+        };
+      }
+      
       const result = await this.handleTextMessage(telegramUpdate.message);
       logger.info('🔍 SmartRouter result:', result?.requestType || 'undefined');
       console.log('🔍 Text result:', JSON.stringify(result, null, 2));
