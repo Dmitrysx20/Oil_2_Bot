@@ -110,6 +110,9 @@ class TelegramController {
         case 'music_request':
           return await this.handleMusicRequest(routeResult);
 
+        case 'help_request':
+          return await this.handleHelpRequest(routeResult);
+
         case 'subscription_inquiry':
           return await this.handleSubscriptionInquiry(routeResult);
 
@@ -215,6 +218,40 @@ class TelegramController {
       chatId,
       message: helpMessage,
       keyboard: this.getMainMenuKeyboard()
+    };
+  }
+
+  async handleHelpRequest(routeResult) {
+    const { chatId, callbackQueryId } = routeResult;
+    
+    const helpMessage = `💡 **Как пользоваться ботом**
+
+🌿 **Поиск масел:**
+• Напиши название: "лаванда", "мята"
+• С вопросом: "расскажи про лимон"
+• По настроению: "стресс", "хочу энергии"
+
+🎯 **Рекомендации:**
+• По симптому: "болит голова"
+• По цели: "концентрация", "сон"
+
+🎵 **Музыка:**
+• "музыка для расслабления"
+• "плейлист для сна"
+
+🔔 **Подписка:**
+• "подписаться" - ежедневные советы
+
+💡 **Примеры:**
+• "Какое масло от головной боли?"
+• "Масла для концентрации"
+• "Музыка для медитации"`;
+
+    return {
+      chatId,
+      message: helpMessage,
+      keyboard: this.getMainMenuKeyboard(),
+      callbackQueryId
     };
   }
 

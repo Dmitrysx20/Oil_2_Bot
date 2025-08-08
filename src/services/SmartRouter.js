@@ -143,6 +143,40 @@ class SmartRouter {
       };
     }
 
+    // Здоровье
+    if (callbackData === 'health_issues') {
+      return {
+        requestType: 'keyword_search',
+        chatId: chatId,
+        keywords: ['здоровье', 'болезнь', 'симптом'],
+        userQuery: 'проблемы со здоровьем',
+        isCallbackQuery: true,
+        callbackQueryId: callbackQuery.id
+      };
+    }
+
+    // Музыка
+    if (callbackData === 'music_menu') {
+      return {
+        requestType: 'music_request',
+        chatId: chatId,
+        userQuery: 'музыка',
+        isCallbackQuery: true,
+        callbackQueryId: callbackQuery.id
+      };
+    }
+
+    // Помощь
+    if (callbackData === 'help_menu') {
+      return {
+        requestType: 'help_request',
+        chatId: chatId,
+        userQuery: 'помощь',
+        isCallbackQuery: true,
+        callbackQueryId: callbackQuery.id
+      };
+    }
+
     // Главное меню
     if (callbackData === 'main_menu' || callbackData.startsWith('main_menu_')) {
       return {
@@ -165,8 +199,8 @@ class SmartRouter {
       };
     }
 
-    // Подписки
-    if (callbackData.includes('subscribe') || callbackData.includes('unsubscribe')) {
+    // Подписки - только точные совпадения
+    if (callbackData === 'subscribe' || callbackData === 'unsubscribe') {
       return {
         requestType: 'subscription_management',
         chatId: chatId,
