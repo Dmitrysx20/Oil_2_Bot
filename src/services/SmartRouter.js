@@ -179,6 +179,7 @@ class SmartRouter {
     });
 
     if (!rawText) {
+      console.log('❌ Empty text received, chatId:', chatId);
       return {
         requestType: 'empty_message',
         chatId: chatId,
