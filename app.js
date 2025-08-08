@@ -99,7 +99,7 @@ app.listen(PORT, '0.0.0.0', async () => {
         await axios.get(`https://api.telegram.org/bot${TOKEN}/deleteWebhook`);
         if (ENABLE_WEBHOOK) {
           if (!WEBHOOK_URL) throw new Error('WEBHOOK_URL не задан при ENABLE_WEBHOOK=true');
-          const hook = `${WEBHOOK_URL}/webhook/telegram`;
+          const hook = WEBHOOK_URL;
           await axios.get(`https://api.telegram.org/bot${TOKEN}/setWebhook`, { params: { url: hook } });
           console.log('🔗 Webhook set:', hook);
         } else {
