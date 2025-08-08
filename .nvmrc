@@ -1,1 +1,4 @@
-18.19.0 
+node-version=18.19.0
+package-lock=false
+audit=false
+fund=false
