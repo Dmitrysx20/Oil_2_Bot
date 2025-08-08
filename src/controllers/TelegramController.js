@@ -262,22 +262,13 @@ class TelegramController {
         context = `Медицинский запрос: ${medicalInfo.category}`;
       }
 
-      const recommendations = await this.aiService.getOilRecommendations(
-        keywords, 
-        searchQuery, 
-        context
-      );
+      const aiResponse = await this.aiService.getBasicRecommendation(routeResult);
 
-      if (recommendations && recommendations.length > 0) {
-        const formattedResponse = responseFormatter.formatRecommendations(
-          recommendations, 
-          keywords.join(', ')
-        );
-        
+      if (aiResponse && aiResponse.message) {
         return {
           chatId,
-          message: formattedResponse,
-          keyboard: this.getRecommendationsKeyboard(recommendations),
+          message: aiResponse.message,
+          keyboard: { inline_keyboard: aiResponse.keyboard },
           callbackQueryId
         };
       } else {
