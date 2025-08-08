@@ -43,6 +43,7 @@ class SmartRouter {
   async routeMessage(telegramUpdate) {
     try {
       logger.info('🧠 Smart Router processing update');
+      console.log('📥 Raw update:', JSON.stringify(telegramUpdate, null, 2));
       
       // Проверяем тип обновления
       const isCallback = telegramUpdate?.callback_query ? true : false;
@@ -50,12 +51,13 @@ class SmartRouter {
       if (isCallback) {
         const result = await this.handleCallbackQuery(telegramUpdate.callback_query);
         logger.info('🔍 SmartRouter result:', result?.requestType || 'undefined');
+        console.log('🔍 Callback result:', JSON.stringify(result, null, 2));
         return result;
       }
       
       const result = await this.handleTextMessage(telegramUpdate.message);
       logger.info('🔍 SmartRouter result:', result?.requestType || 'undefined');
-      logger.info('🔍 Full result:', JSON.stringify(result, null, 2));
+      console.log('🔍 Text result:', JSON.stringify(result, null, 2));
       return result;
       
     } catch (error) {
@@ -158,6 +160,13 @@ class SmartRouter {
     const rawText = (message?.text || '').trim();
     const chatId = message?.chat?.id;
     const userName = message?.from?.first_name;
+
+    console.log('📝 Message details:', {
+      rawText,
+      chatId,
+      userName,
+      messageKeys: Object.keys(message || {})
+    });
 
     if (!rawText) {
       return {
