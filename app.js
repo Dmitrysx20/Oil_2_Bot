@@ -158,25 +158,6 @@ app.use((err, _req, res, _next) => {
   console.error('Global error:', err);
   res.status(500).json({ error: 'Internal server error' });
 });
-Что поставить в Railway → Variables
-Обязательные
-
-TELEGRAM_BOT_TOKEN — токен бота
-
-Выбор режима
-
-ENABLE_WEBHOOK=true и WEBHOOK_URL=https://<твой-subdomain>.up.railway.app — тогда вебхук
-
-или ENABLE_WEBHOOK=false — тогда polling (публичный URL не нужен)
-
-Больше ничего не надо.
-
-package.json (минимум)
-Если чего-то не хватает — добавь:
-
-json
-Копировать
-Редактировать
 {
   "name": "aromatherapy-telegram-bot",
   "version": "1.0.0",
