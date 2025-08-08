@@ -2,3 +2,4 @@ node-version=18.19.0
 package-lock=false
 audit=false
 fund=false
+legacy-peer-deps=true
