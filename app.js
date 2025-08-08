@@ -77,6 +77,14 @@ if (bot) {
       console.error('Message handler error:', e);
     }
   });
+
+  bot.on('callback_query', async (callbackQuery) => {
+    try {
+      await handleUpdate(bot, callbackQuery, services);
+    } catch (e) {
+      console.error('Callback query handler error:', e);
+    }
+  });
 }
 
 // === Start server & set mode
