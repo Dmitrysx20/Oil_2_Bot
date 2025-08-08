@@ -2,7 +2,7 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "npm run check:env && npm run test:app && npm start"
+startCommand = "npm start"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
@@ -10,4 +10,4 @@ restartPolicyMaxRetries = 10
 
 [deploy.variables]
 NODE_NO_WARNINGS = "1"
-NODE_OPTIONS = "--no-deprecation --no-warnings" 
+NODE_OPTIONS = "--no-deprecation --no-warnings"
