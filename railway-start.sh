@@ -5,4 +5,4 @@ export NODE_NO_WARNINGS=1
 export NODE_OPTIONS="--no-deprecation --no-warnings"
 
 # Запускаем приложение
-exec node --no-deprecation app.js 
+exec node --no-deprecation index.js 
