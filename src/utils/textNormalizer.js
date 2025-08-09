@@ -82,6 +82,13 @@ const typoDictionary = {
   'апельсинами': 'апельсин'
 };
 
+// Медицинские/симптомные опечатки
+const symptomTypos = {
+  'тошната': 'тошнота',
+  'тошната ': 'тошнота ',
+  'тошн': 'тошнота'
+};
+
 // Словарь нормализации
 const normalizationDictionary = {
   'эфирное масло': 'масло',
@@ -124,6 +131,12 @@ function fixCommonTypos(text) {
   // Проходим по словарю опечаток
   for (const [typo, correct] of Object.entries(typoDictionary)) {
     const regex = new RegExp(`\\b${typo}\\b`, 'gi');
+    corrected = corrected.replace(regex, correct);
+  }
+
+  // Исправляем медицинские опечатки
+  for (const [typo, correct] of Object.entries(symptomTypos)) {
+    const regex = new RegExp(typo, 'gi');
     corrected = corrected.replace(regex, correct);
   }
   

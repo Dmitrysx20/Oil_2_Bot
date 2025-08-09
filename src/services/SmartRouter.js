@@ -510,6 +510,16 @@ class SmartRouter {
       }
     }
 
+    // Доп. распознавание распространенных симптомов
+    const extraSymptoms = [
+      { key: 'тошнота', category: 'общий_вопрос' }
+    ];
+    for (const s of extraSymptoms) {
+      if (normalizedText.includes(s.key)) {
+        return { isMedical: true, type: 'symptom', symptom: s.key, category: s.category };
+      }
+    }
+
     return { isMedical: false };
   }
 
