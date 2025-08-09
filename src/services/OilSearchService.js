@@ -35,13 +35,27 @@ class OilSearchService {
       if (this.supabase) {
         try {
           const search = normalizedOilName.replace(/[,]/g, ' ').trim();
+          const capitalizeWords = (s) => s.split(' ').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+          const title = capitalizeWords(search);
           // 1) точное совпадение по названию (без wildcard)
+          // 0) точное совпадение по названию с заглавными
           let { data, error } = await this.supabase
+            .from('oils')
+            .select('oil_name, description, keywords, emotional_effect, physical_effect, applications, safety_warning, joke')
+            .eq('oil_name', title)
+            .limit(1)
+            .maybeSingle();
+
+          // 1) точное совпадение по названию (без wildcard)
+          if (!data) {
+            const res0b = await this.supabase
             .from('oils')
             .select('oil_name, description, keywords, emotional_effect, physical_effect, applications, safety_warning, joke')
             .ilike('oil_name', search)
             .limit(1)
-            .maybeSingle();
+              .maybeSingle();
+            if (!res0b.error) data = res0b.data; else logger.warn('Supabase search error (exact ilike):', res0b.error.message);
+          }
 
           if (error) {
             logger.warn('Supabase search error (exact name):', error.message);
@@ -83,7 +97,32 @@ class OilSearchService {
             logger.info('✅ Oil found in Supabase (oils):', data.oil_name);
           }
 
-          // 4) HTTP REST fallback (на случай сетевых/клиентских нюансов supabase-js)
+          // 4) RPC полнотекстовый поиск (если функция развернута миграцией)
+          if (!data) {
+            try {
+              const rpc = await this.supabase.rpc('search_oils', { search_query: search });
+              if (!rpc.error && Array.isArray(rpc.data) && rpc.data.length > 0) {
+                const row = rpc.data[0];
+                oilData = {
+                  name: row.oil_name,
+                  description: row.description,
+                  emotional_effect: row.emotional_effect,
+                  physical_effect: row.physical_effect,
+                  applications: row.applications,
+                  safety_warning: row.safety_warning,
+                  joke: row.joke || 'Ароматерапия — это маленькая радость в капле! 😊',
+                  source: 'db'
+                };
+                logger.info('✅ Oil found via RPC search_oils:', row.oil_name);
+              } else if (rpc.error) {
+                logger.warn('RPC search_oils error:', rpc.error.message);
+              }
+            } catch (rpcErr) {
+              logger.warn('RPC search_oils exception:', rpcErr.message);
+            }
+          }
+
+          // 5) HTTP REST fallback (на случай сетевых/клиентских нюансов supabase-js)
           if (!data) {
             try {
               const baseUrl = `${config.supabase.url}/rest/v1/oils`;
@@ -96,7 +135,7 @@ class OilSearchService {
               // eq
               let resp = await axios.get(baseUrl, {
                 headers,
-                params: { select, oil_name: `eq.${search}` }
+                params: { select, oil_name: `eq.${title}` }
               });
               let rows = Array.isArray(resp.data) ? resp.data : [];
 
