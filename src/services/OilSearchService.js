@@ -76,7 +76,8 @@ class OilSearchService {
               physical_effect: data.physical_effect,
               applications: data.applications,
               safety_warning: data.safety_warning,
-              joke: data.joke || 'Ароматерапия — это маленькая радость в капле! 😊'
+              joke: data.joke || 'Ароматерапия — это маленькая радость в капле! 😊',
+              source: 'db'
             };
             logger.info('✅ Oil found in Supabase (oils):', data.oil_name);
           }
@@ -98,7 +99,8 @@ class OilSearchService {
             physical_effect: localOil.physical_effect,
             applications: localOil.applications,
             safety_warning: localOil.safety_warning,
-            joke: localOil.joke
+            joke: localOil.joke,
+            source: 'local'
           };
           logger.info('✅ Oil found in local database:', localOil.oil_name);
         } else {
@@ -117,7 +119,10 @@ class OilSearchService {
       }
 
       // Формируем сообщение
-      const message = `🌿 **${oilData.name}**\n\n${oilData.description}\n\n🧠 **Эмоциональный эффект:**\n${oilData.emotional_effect}\n\n💪 **Физический эффект:**\n${oilData.physical_effect}\n\n🧴 **Применение:**\n${oilData.applications}\n\n⚠️ **Осторожно:**\n${oilData.safety_warning}\n\n😄 **Кстати:**\n${oilData.joke}`;
+      let message = `🌿 **${oilData.name}**\n\n${oilData.description}\n\n🧠 **Эмоциональный эффект:**\n${oilData.emotional_effect}\n\n💪 **Физический эффект:**\n${oilData.physical_effect}\n\n🧴 **Применение:**\n${oilData.applications}\n\n⚠️ **Осторожно:**\n${oilData.safety_warning}\n\n😄 **Кстати:**\n${oilData.joke}`;
+      if (oilData.source) {
+        message += `\n\n🧩 Источник: ${oilData.source === 'db' ? 'БД' : 'локальная база'}`;
+      }
 
       return {
         action: 'oil_found',
