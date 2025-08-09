@@ -333,7 +333,7 @@ class SmartRouter {
     const medicalResult = this.checkMedicalSymptoms(normalizedText);
     if (medicalResult.isMedical) {
       return {
-        requestType: 'keyword_search',
+        requestType: 'medical_request',
         chatId: chatId,
         keywords: this.getMedicalKeywords(medicalResult.category),
         userQuery: rawText,

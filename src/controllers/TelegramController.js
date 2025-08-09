@@ -103,6 +103,8 @@ class TelegramController {
 
         case 'keyword_search':
           return await this.handleKeywordSearch(routeResult);
+        case 'medical_request':
+          return await this.handleMedicalRequest(routeResult);
 
         case 'disambiguation':
           return await this.handleDisambiguation(routeResult);
@@ -328,6 +330,32 @@ class TelegramController {
         message: '😔 Ошибка при поиске рекомендаций. Попробуйте позже.',
         keyboard: this.getMainMenuKeyboard(),
         callbackQueryId
+      };
+    }
+  }
+
+  async handleMedicalRequest(routeResult) {
+    const { chatId } = routeResult;
+    try {
+      const res = await this.aiService.getMedicalRecommendation(routeResult);
+      if (res && res.message) {
+        return {
+          chatId,
+          message: res.message,
+          keyboard: { inline_keyboard: this.getMainMenuKeyboard().inline_keyboard }
+        };
+      }
+      return {
+        chatId,
+        message: '🤔 Не нашёл рекомендации. Попробуйте уточнить симптом (например: «тошнота», «ПМС», «болит колено»).',
+        keyboard: this.getMainMenuKeyboard()
+      };
+    } catch (error) {
+      logger.error('Medical request error:', error);
+      return {
+        chatId,
+        message: '😔 Ошибка при медицинской рекомендации. Попробуйте позже.',
+        keyboard: this.getMainMenuKeyboard()
       };
     }
   }
