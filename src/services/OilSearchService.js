@@ -34,17 +34,41 @@ class OilSearchService {
       if (this.supabase) {
         try {
           const search = normalizedOilName.replace(/[,]/g, ' ').trim();
-          const { data, error } = await this.supabase
+          // 1) точное совпадение по названию (без wildcard)
+          let { data, error } = await this.supabase
             .from('oils')
             .select('oil_name, description, keywords, emotional_effect, physical_effect, applications, safety_warning, joke')
-            // PostgREST .or() использует * как wildcard, а не %
-            .or(`oil_name.ilike.*${search}*,keywords.ilike.*${search}*`)
+            .ilike('oil_name', search)
             .limit(1)
             .maybeSingle();
 
           if (error) {
-            logger.warn('Supabase search error (oils):', error);
-          } else if (data) {
+            logger.warn('Supabase search error (exact name):', error.message);
+          }
+
+          // 2) частичное совпадение по названию
+          if (!data) {
+            const res2 = await this.supabase
+              .from('oils')
+              .select('oil_name, description, keywords, emotional_effect, physical_effect, applications, safety_warning, joke')
+              .ilike('oil_name', `%${search}%`)
+              .limit(1)
+              .maybeSingle();
+            if (!res2.error) data = res2.data; else logger.warn('Supabase search error (name like):', res2.error.message);
+          }
+
+          // 3) частичное совпадение по keywords
+          if (!data) {
+            const res3 = await this.supabase
+              .from('oils')
+              .select('oil_name, description, keywords, emotional_effect, physical_effect, applications, safety_warning, joke')
+              .ilike('keywords', `%${search}%`)
+              .limit(1)
+              .maybeSingle();
+            if (!res3.error) data = res3.data; else logger.warn('Supabase search error (keywords like):', res3.error.message);
+          }
+
+          if (data) {
             oilData = {
               name: data.oil_name,
               description: data.description,
