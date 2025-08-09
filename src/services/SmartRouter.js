@@ -413,6 +413,15 @@ class SmartRouter {
       };
     }
 
+    // 8.1 Гайд по ароматерапии (общие рекомендации)
+    if (normalizedText.includes('ароматерап') ||
+        (normalizedText.includes('описан') && normalizedText.includes('масл'))) {
+      return {
+        requestType: 'aroma_guide',
+        chatId: chatId
+      };
+    }
+
     // 9. Default - неопознанный запрос
     return {
       requestType: 'unknown',
