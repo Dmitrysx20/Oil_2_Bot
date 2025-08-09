@@ -32,9 +32,21 @@ module.exports = async function handleUpdate(bot, update, services) {
 
     // Создаем контроллер
     const telegramController = new TelegramController(controllerServices);
-    
+
+    // Нормализуем входящее обновление к формату Telegram API
+    // - Событие message: { message: <Message> }
+    // - Событие callback_query: { callback_query: <CallbackQuery> }
+    let normalizedUpdate = update;
+    if (update && update.data && update.message && !update.callback_query) {
+      // node-telegram-bot-api передает callbackQuery объектом без обертки update
+      normalizedUpdate = { callback_query: update };
+    } else if (update && update.message_id && update.chat && !update.message) {
+      // node-telegram-bot-api передает message объектом без обертки update
+      normalizedUpdate = { message: update };
+    }
+
     // Обрабатываем обновление через контроллер
-    const response = await telegramController.processUpdate(update);
+    const response = await telegramController.processUpdate(normalizedUpdate);
     
     console.log('🔍 Response from controller:', JSON.stringify(response, null, 2));
     
@@ -79,7 +91,9 @@ module.exports = async function handleUpdate(bot, update, services) {
     console.error('HandleUpdate error:', error);
     
     // Fallback ответ
-    const chatId = update.message?.chat?.id || update.callback_query?.message?.chat?.id;
+    const chatId = (update.message?.chat?.id)
+      || (update.callback_query?.message?.chat?.id)
+      || (update.chat?.id);
     if (chatId) {
       await bot.sendMessage(
         chatId, 
