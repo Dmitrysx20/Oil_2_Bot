@@ -6,6 +6,7 @@ const { findOilsByKeywords, getAllOils } = require('../data/full_oils_database')
 class AIService {
   constructor() {
     this.openaiConfig = config.openai;
+    this.perplexityConfig = config.perplexity;
   }
 
   async getBasicRecommendation(routingResult) {
@@ -117,10 +118,28 @@ class AIService {
       
       logger.info('🏥 AI Medical recommendation for:', medicalInfo);
 
-      // Пытаемся использовать OpenAI для медицинских рекомендаций
+      // Сначала пробуем Perplexity для медицинских запросов
+      const usePerplexity = Boolean(this.perplexityConfig?.apiKey);
+      if (usePerplexity) {
+        const prompt = this.buildMedicalPrompt(medicalInfo);
+        const pplx = await this.getPerplexityRecommendation(prompt);
+        if (pplx) {
+          return {
+            action: 'ai_medical_recommendation',
+            chatId: chatId,
+            message: pplx,
+            keyboard: [
+              [{ text: '🏠 Главное меню', callback_data: 'main_menu' }]
+            ],
+            aiData: { type: 'medical', category: medicalInfo?.category, source: 'perplexity' }
+          };
+        }
+      }
+
+      // Если Perplexity недоступен — пробуем OpenAI
       if (this.openaiConfig.apiKey) {
         const openaiResponse = await this.getOpenAIRecommendation(
-          `Дай рекомендации по ароматерапии для ${medicalInfo?.category || 'общего оздоровления'}. Включи конкретные масла, дозировки, способы применения и меры безопасности. Ответь на русском языке.`
+          this.buildMedicalPrompt(medicalInfo)
         );
         
         if (openaiResponse) {
@@ -217,6 +236,60 @@ class AIService {
 
     } catch (error) {
       logger.error('❌ OpenAI API error:', error.response?.data || error.message);
+      return null;
+    }
+  }
+
+  buildMedicalPrompt(medicalInfo) {
+    const topic = medicalInfo?.symptom || medicalInfo?.category || 'общего оздоровления';
+    return `Дай чёткие рекомендации по ароматерапии для запроса: "${topic}".
+В ответе обязательно:
+- конкретные эфирные масла (2–4 варианта)
+- дозировки по способам применения (ингаляции, диффузор, массаж, ванна, точечно)
+- краткие меры безопасности и противопоказания
+Отвечай на русском языке, структурировано и кратко.`;
+  }
+
+  async getPerplexityRecommendation(prompt) {
+    try {
+      if (!this.perplexityConfig?.apiKey) {
+        logger.warn('Perplexity API key not configured');
+        return null;
+      }
+
+      logger.info('🔍 Using Perplexity API for recommendation');
+      const response = await axios.post(
+        'https://api.perplexity.ai/chat/completions',
+        {
+          model: this.perplexityConfig.model,
+          messages: [
+            {
+              role: 'system',
+              content:
+                'Ты эксперт по ароматерапии и эфирным маслам. Давай точные, безопасные и проверяемые рекомендации. Если есть спорные моменты безопасности — упоминай их явно.'
+            },
+            { role: 'user', content: prompt }
+          ],
+          max_tokens: this.perplexityConfig.maxTokens,
+          temperature: 0.4
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${this.perplexityConfig.apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const txt = response.data?.choices?.[0]?.message?.content;
+      if (txt) {
+        logger.info('✅ Perplexity recommendation received');
+        return txt;
+      }
+      logger.warn('Perplexity returned empty content');
+      return null;
+    } catch (error) {
+      logger.error('❌ Perplexity API error:', error.response?.data || error.message);
       return null;
     }
   }
