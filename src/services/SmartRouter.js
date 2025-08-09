@@ -181,6 +181,31 @@ class SmartRouter {
       };
     }
 
+    // Музыка: сохранить предпочтение
+    if (callbackData.startsWith('music_save_')) {
+      const mood = callbackData.replace('music_save_', '');
+      return {
+        requestType: 'music_save_preference',
+        chatId: chatId,
+        mood,
+        isCallbackQuery: true,
+        callbackQueryId: callbackQuery.id
+      };
+    }
+
+    // Музыка: обновить рекомендации
+    if (callbackData.startsWith('music_refresh_')) {
+      const mood = callbackData.replace('music_refresh_', '');
+      return {
+        requestType: 'music_request',
+        chatId: chatId,
+        requestedMood: mood,
+        userQuery: 'музыка',
+        isCallbackQuery: true,
+        callbackQueryId: callbackQuery.id
+      };
+    }
+
     // Помощь
     if (callbackData === 'help_menu') {
       return {

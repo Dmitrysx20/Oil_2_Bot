@@ -110,6 +110,9 @@ class TelegramController {
         case 'music_request':
           return await this.handleMusicRequest(routeResult);
 
+        case 'music_save_preference':
+          return await this.handleMusicSavePreference(routeResult);
+
         case 'help_request':
           return await this.handleHelpRequest(routeResult);
 
@@ -374,6 +377,27 @@ class TelegramController {
       return {
         chatId,
         message: '😔 Ошибка при поиске музыки. Попробуйте позже.',
+        keyboard: this.getMainMenuKeyboard(),
+        callbackQueryId
+      };
+    }
+  }
+
+  async handleMusicSavePreference(routeResult) {
+    const { chatId, mood, callbackQueryId } = routeResult;
+    try {
+      const result = await this.musicService.savePreferredMood(chatId, mood);
+      return {
+        chatId,
+        message: result.saved ? `❤️ Сохранил предпочтение: ${mood}` : '⚠️ Не удалось сохранить предпочтение.',
+        keyboard: this.getMainMenuKeyboard(),
+        callbackQueryId
+      };
+    } catch (error) {
+      logger.error('Music save preference error:', error);
+      return {
+        chatId,
+        message: '⚠️ Не удалось сохранить предпочтение.',
         keyboard: this.getMainMenuKeyboard(),
         callbackQueryId
       };
