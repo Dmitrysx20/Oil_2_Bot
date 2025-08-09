@@ -33,10 +33,12 @@ class OilSearchService {
       // Пытаемся найти масло в Supabase (таблица public.oils)
       if (this.supabase) {
         try {
+          const search = normalizedOilName.replace(/[,]/g, ' ').trim();
           const { data, error } = await this.supabase
             .from('oils')
             .select('oil_name, description, keywords, emotional_effect, physical_effect, applications, safety_warning, joke')
-            .or(`oil_name.ilike.%${normalizedOilName}%,keywords.ilike.%${normalizedOilName}%`)
+            // PostgREST .or() использует * как wildcard, а не %
+            .or(`oil_name.ilike.*${search}*,keywords.ilike.*${search}*`)
             .limit(1)
             .maybeSingle();
 
