@@ -229,6 +229,29 @@ class SmartRouter {
       };
     }
 
+    // Подписки: открыть меню подписки
+    if (callbackData === 'subscription_menu') {
+      return {
+        requestType: 'subscription_inquiry',
+        chatId: chatId,
+        userName: userName,
+        isCallbackQuery: true,
+        callbackQueryId: callbackQuery.id
+      };
+    }
+
+    // Подписки: показать детали через существующий обработчик подтверждений
+    if (callbackData === 'subscription_details') {
+      return {
+        requestType: 'subscription_confirmation',
+        chatId: chatId,
+        userName: userName,
+        confirmationType: 'request_details',
+        isCallbackQuery: true,
+        callbackQueryId: callbackQuery.id
+      };
+    }
+
     // Админские callback
     if (callbackData.startsWith('admin_')) {
       return {
