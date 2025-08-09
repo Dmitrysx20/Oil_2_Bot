@@ -1,4 +1,5 @@
 const logger = require('../utils/logger');
+const axios = require('axios');
 const { createClient } = require('@supabase/supabase-js');
 const config = require('../../config');
 const { findOilByName, findOilsByKeywords, getAllOils } = require('../data/full_oils_database');
@@ -80,6 +81,60 @@ class OilSearchService {
               source: 'db'
             };
             logger.info('✅ Oil found in Supabase (oils):', data.oil_name);
+          }
+
+          // 4) HTTP REST fallback (на случай сетевых/клиентских нюансов supabase-js)
+          if (!data) {
+            try {
+              const baseUrl = `${config.supabase.url}/rest/v1/oils`;
+              const headers = {
+                apikey: config.supabase.key,
+                Authorization: `Bearer ${config.supabase.key}`
+              };
+              const select = 'oil_name,description,keywords,emotional_effect,physical_effect,applications,safety_warning,joke';
+
+              // eq
+              let resp = await axios.get(baseUrl, {
+                headers,
+                params: { select, oil_name: `eq.${search}` }
+              });
+              let rows = Array.isArray(resp.data) ? resp.data : [];
+
+              // ilike name
+              if (rows.length === 0) {
+                resp = await axios.get(baseUrl, {
+                  headers,
+                  params: { select, oil_name: `ilike.*${search}*` }
+                });
+                rows = Array.isArray(resp.data) ? resp.data : [];
+              }
+
+              // ilike keywords
+              if (rows.length === 0) {
+                resp = await axios.get(baseUrl, {
+                  headers,
+                  params: { select, keywords: `ilike.*${search}*` }
+                });
+                rows = Array.isArray(resp.data) ? resp.data : [];
+              }
+
+              if (rows.length > 0) {
+                const row = rows[0];
+                oilData = {
+                  name: row.oil_name,
+                  description: row.description,
+                  emotional_effect: row.emotional_effect,
+                  physical_effect: row.physical_effect,
+                  applications: row.applications,
+                  safety_warning: row.safety_warning,
+                  joke: row.joke || 'Ароматерапия — это маленькая радость в капле! 😊',
+                  source: 'db'
+                };
+                logger.info('✅ Oil found via REST fallback:', row.oil_name);
+              }
+            } catch (httpErr) {
+              logger.warn('Supabase REST fallback error:', httpErr?.response?.data || httpErr.message);
+            }
           }
         } catch (dbError) {
           logger.error('Database search error (oils):', dbError);
