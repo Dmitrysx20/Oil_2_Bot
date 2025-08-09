@@ -30,24 +30,32 @@ class OilSearchService {
 
       let oilData = null;
 
-      // Пытаемся найти масло в Supabase
+      // Пытаемся найти масло в Supabase (таблица public.oils)
       if (this.supabase) {
         try {
           const { data, error } = await this.supabase
-            .from('essential_oils')
-            .select('*')
-            .ilike('name', `%${normalizedOilName}%`)
+            .from('oils')
+            .select('oil_name, description, keywords, emotional_effect, physical_effect, applications, safety_warning, joke')
+            .or(`oil_name.ilike.%${normalizedOilName}%,keywords.ilike.%${normalizedOilName}%`)
             .limit(1)
-            .single();
+            .maybeSingle();
 
           if (error) {
-            logger.warn('Supabase search error:', error);
+            logger.warn('Supabase search error (oils):', error);
           } else if (data) {
-            oilData = data;
-            logger.info('✅ Oil found in Supabase:', data.name);
+            oilData = {
+              name: data.oil_name,
+              description: data.description,
+              emotional_effect: data.emotional_effect,
+              physical_effect: data.physical_effect,
+              applications: data.applications,
+              safety_warning: data.safety_warning,
+              joke: data.joke || 'Ароматерапия — это маленькая радость в капле! 😊'
+            };
+            logger.info('✅ Oil found in Supabase (oils):', data.oil_name);
           }
         } catch (dbError) {
-          logger.error('Database search error:', dbError);
+          logger.error('Database search error (oils):', dbError);
         }
       }
 
