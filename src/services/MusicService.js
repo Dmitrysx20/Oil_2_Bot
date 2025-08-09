@@ -1,8 +1,28 @@
 const logger = require('../utils/logger');
+const { createClient } = require('@supabase/supabase-js');
+const config = require('../../config');
 
 class MusicService {
   constructor() {
     this.musicDatabase = this.initMusicDatabase();
+    this.supabase = null;
+    this.initializeSupabase();
+  }
+
+  initializeSupabase() {
+    try {
+      const supabaseUrl = config.supabase.url;
+      const supabaseKey = config.supabase.key;
+      if (supabaseUrl && supabaseKey) {
+        this.supabase = createClient(supabaseUrl, supabaseKey);
+        logger.info('MusicService: Supabase client initialized');
+      } else {
+        logger.warn('MusicService: Supabase credentials not found, using in-memory music database');
+      }
+    } catch (error) {
+      logger.error('MusicService: Failed to initialize Supabase', error);
+      this.supabase = null;
+    }
   }
 
   initMusicDatabase() {
@@ -134,6 +154,44 @@ class MusicService {
         }
       }
 
+      // 1) Пробуем из Supabase
+      if (this.supabase) {
+        try {
+          let query = this.supabase
+            .from('music_library')
+            .select('id,title,artist,genre,mood,duration,links,recommended_oils,popularity_score')
+            .eq('is_active', true)
+            .order('popularity_score', { ascending: false })
+            .limit(10);
+
+          if (finalMood) {
+            query = query.eq('mood', finalMood);
+          }
+
+          const { data, error } = await query;
+          if (!error && data && data.length > 0) {
+            const selected = this.selectRandomTracks(data, Math.min(3, data.length));
+            const recommendedOils = this.collectRecommendedOils(data);
+            return {
+              mood: finalMood || data[0].mood,
+              tracks: selected.map(t => ({
+                id: t.id,
+                title: t.title,
+                artist: t.artist,
+                genre: t.genre,
+                duration: typeof t.duration === 'number' ? `${Math.floor(t.duration / 60)}:${String(t.duration % 60).padStart(2, '0')}` : (t.duration || ''),
+                links: t.links || null,
+                recommended_oils: t.recommended_oils || []
+              })),
+              recommendedOils
+            };
+          }
+        } catch (supabaseError) {
+          logger.warn('MusicService: Supabase query failed, falling back to in-memory', supabaseError.message);
+        }
+      }
+
+      // 2) Fallback на in-memory
       const moodData = this.musicDatabase[finalMood];
       if (!moodData) {
         return null;
@@ -157,6 +215,16 @@ class MusicService {
   selectRandomTracks(tracks, count) {
     const shuffled = [...tracks].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, count);
+  }
+
+  collectRecommendedOils(rows) {
+    const oils = new Set();
+    for (const row of rows) {
+      if (Array.isArray(row.recommended_oils)) {
+        row.recommended_oils.forEach(o => typeof o === 'string' && oils.add(o));
+      }
+    }
+    return Array.from(oils);
   }
 
   getMusicKeyboard(mood, tracks) {
@@ -183,6 +251,37 @@ class MusicService {
     ]);
 
     return keyboard;
+  }
+
+  async savePreferredMood(chatId, mood) {
+    try {
+      if (!this.supabase) {
+        logger.warn('MusicService: Supabase not configured, skip saving preferred mood');
+        return { saved: false };
+      }
+
+      const payload = {
+        chat_id: chatId,
+        mood: mood,
+        last_used: new Date().toISOString(),
+        like_count: 1
+      };
+
+      const { error } = await this.supabase
+        .from('user_music_prefs')
+        .upsert(payload, { onConflict: 'chat_id,mood' })
+        .select('chat_id');
+
+      if (error) {
+        logger.error('MusicService: Failed to save preferred mood', error);
+        return { saved: false };
+      }
+
+      return { saved: true };
+    } catch (error) {
+      logger.error('MusicService: savePreferredMood error', error);
+      return { saved: false };
+    }
   }
 
   getAvailableMoods() {
