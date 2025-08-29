@@ -48,12 +48,15 @@ const supabaseConfig = {
   }
 };
 
-// Создание клиента Supabase
-const supabase = createClient(
-  supabaseConfig.supabaseUrl,
-  supabaseConfig.supabaseKey,
-  supabaseConfig.options
-);
+// Создание клиента Supabase (условно)
+let supabase = null;
+if (supabaseConfig.supabaseUrl && supabaseConfig.supabaseKey) {
+  supabase = createClient(
+    supabaseConfig.supabaseUrl,
+    supabaseConfig.supabaseKey,
+    supabaseConfig.options
+  );
+}
 
 // Функция для проверки подключения
 async function testSupabaseConnection() {
@@ -74,6 +77,16 @@ async function testSupabaseConnection() {
     }
     
     // Простой тест подключения
+    if (!supabase) {
+      return {
+        success: false,
+        error: 'Supabase клиент не инициализирован',
+        recommendations: [
+          'Проверьте переменные окружения SUPABASE_URL и SUPABASE_ANON_KEY'
+        ]
+      };
+    }
+    
     const { data, error } = await supabase.from('subscribers').select('count').limit(1);
     
     if (error) {
