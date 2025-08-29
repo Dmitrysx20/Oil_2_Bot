@@ -1,33 +1,54 @@
-const winston = require('winston');
+// Простой logger без внешних зависимостей
+class SimpleLogger {
+  constructor() {
+    this.level = process.env.LOG_LEVEL || 'info';
+  }
 
-// Create logger
-const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
-  format: winston.format.combine(
-    winston.format.timestamp({
-      format: 'YYYY-MM-DD HH:mm:ss'
-    }),
-    winston.format.errors({ stack: true }),
-    winston.format.json()
-  ),
-  defaultMeta: { service: 'aroma-helper-bot' },
-  transports: [
-    // Write all logs with importance level of `error` or less to `error.log`
-    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-    // Write all logs with importance level of `info` or less to `combined.log`
-    new winston.transports.File({ filename: 'logs/combined.log' }),
-  ],
-});
+  formatMessage(level, message, meta = {}) {
+    const timestamp = new Date().toISOString();
+    const metaStr = Object.keys(meta).length > 0 ? ` ${JSON.stringify(meta)}` : '';
+    return `[${timestamp}] ${level.toUpperCase()}: ${message}${metaStr}`;
+  }
 
-// If we're not in production then log to the `console` with the format:
-// `${info.level}: ${info.message} JSON.stringify({ ...rest }) `
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.combine(
-      winston.format.colorize(),
-      winston.format.simple()
-    )
-  }));
+  info(message, meta = {}) {
+    if (this.shouldLog('info')) {
+      console.log(this.formatMessage('info', message, meta));
+    }
+  }
+
+  error(message, meta = {}) {
+    if (this.shouldLog('error')) {
+      console.error(this.formatMessage('error', message, meta));
+    }
+  }
+
+  warn(message, meta = {}) {
+    if (this.shouldLog('warn')) {
+      console.warn(this.formatMessage('warn', message, meta));
+    }
+  }
+
+  debug(message, meta = {}) {
+    if (this.shouldLog('debug')) {
+      console.log(this.formatMessage('debug', message, meta));
+    }
+  }
+
+  shouldLog(level) {
+    const levels = {
+      error: 0,
+      warn: 1,
+      info: 2,
+      debug: 3
+    };
+    
+    const currentLevel = levels[this.level] || 2;
+    const messageLevel = levels[level] || 2;
+    
+    return messageLevel <= currentLevel;
+  }
 }
+
+const logger = new SimpleLogger();
 
 module.exports = { logger }; 

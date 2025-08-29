@@ -14,7 +14,13 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "node-telegram-bot-api": "^0.64.0",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "dotenv": "^16.3.1",
+    "openai": "^4.20.1"
   },
   "engines": {
     "node": "22.17.1",
@@ -31,10 +37,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/essential-oils-bot.git"
+    "url": "https://github.com/Dmitrysx20/Oil_2_Bot.git"
   },
   "bugs": {
-    "url": "https://github.com/your-username/essential-oils-bot/issues"
+    "url": "https://github.com/Dmitrysx20/Oil_2_Bot/issues"
   },
-  "homepage": "https://github.com/your-username/essential-oils-bot#readme"
+  "homepage": "https://github.com/Dmitrysx20/Oil_2_Bot#readme"
 } 

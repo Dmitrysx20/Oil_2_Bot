@@ -1,5 +1,5 @@
-// 🚂 ПРОСТОЙ EXPRESS СЕРВЕР ДЛЯ RAILWAY
-// Решение проблемы "service unavailable"
+// 🚂 EXPRESS СЕРВЕР С TELEGRAM БОТОМ ДЛЯ RAILWAY
+// Основной сервер с ботом и health check
 
 const express = require('express');
 
@@ -24,7 +24,18 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health check endpoint
+// Health check endpoint для Railway
+app.get('/healthz', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+    service: 'essential-oils-bot'
+  });
+});
+
+// Health check endpoint (альтернативный)
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
@@ -40,7 +51,12 @@ app.get('/', (req, res) => {
     message: 'Essential Oils Bot API',
     version: '1.0.0',
     status: 'running',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      health: '/health',
+      healthz: '/healthz',
+      supabase: '/api/supabase-test'
+    }
   });
 });
 
@@ -98,22 +114,25 @@ app.listen(PORT, '0.0.0.0', () => {
     if (result.success) {
       console.log('✅ Supabase подключен успешно');
     } else {
-      console.log('❌ Ошибка подключения к Supabase:', result.error);
+      console.log('❌ Проблема с Supabase:', result.error);
     }
-  }).catch(error => {
-    console.log('❌ Ошибка тестирования Supabase:', error.message);
   });
-  
-  console.log('🎯 Сервер готов к работе');
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('🛑 Получен сигнал SIGTERM, завершение работы...');
-  process.exit(0);
-});
+// Запускаем основной бот в отдельном процессе
+console.log('🤖 Запуск Telegram бота...');
 
-process.on('SIGINT', () => {
-  console.log('🛑 Получен сигнал SIGINT, завершение работы...');
-  process.exit(0);
-}); 
+// Проверяем наличие токена бота
+if (!process.env.TELEGRAM_BOT_TOKEN) {
+  console.log('⚠️ TELEGRAM_BOT_TOKEN не настроен');
+  console.log('🔧 Бот не будет запущен. Настройте переменную в Railway.');
+} else {
+  try {
+    // Импортируем и запускаем основной бот
+    const botApp = require('./src/index.js');
+    console.log('✅ Telegram бот запущен');
+  } catch (error) {
+    console.error('❌ Ошибка запуска бота:', error.message);
+    console.log('🔧 Проверьте настройки и зависимости');
+  }
+} 
